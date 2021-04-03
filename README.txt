@@ -9,7 +9,7 @@ New:
 
 
 How to use:
-  1)  Unzip - Bantool-Firefox.7z
+  1)  Unzip FirefoxPortable.7z
   2)  navigate to and open \Bantool-Firefox\FirefoxPortable\App\Firefox64\Firefox.exe
   3)  type about:profiles into the URL tab
   4)  create a new profile called "bantool" save it in the bantool folder \Bantool-Firefox\

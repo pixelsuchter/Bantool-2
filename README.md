@@ -10,7 +10,7 @@
 
 <h3>How to use:</h3>
 <ol>
-<li>Unzip - Bantool-Firefox.7z</li>
+<li>Unzip FirefoxPortable.7z</li>
 <li>navigate to and open \Bantool-Firefox\FirefoxPortable\App\Firefox64\Firefox.exe</li>
 <li>type about:profiles into the URL tab</li>
 <li>create a new profile called "bantool" save it in the bantool folder \Bantool-Firefox\ <br>
