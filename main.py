@@ -109,7 +109,7 @@ def browser(userlist, index, channel):
     global counter, done
     try:
         with open(userlist, "r") as _namelist, open("banned_part{index}.txt".format(index=index), "w+") as banned_names:
-            if len(_namelist.readlines()) > 1:
+            if len(_namelist.readlines()) > 0:
                 _namelist.seek(0)
                 with webdriver.Firefox(executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=config["Firefox_profile"],
                                        firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
@@ -118,6 +118,7 @@ def browser(userlist, index, channel):
                     wait = WebDriverWait(driver, 10)
                     driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
                     chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                    chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
                     if chat_field.is_displayed():
                         chat_field.click()
                     try:  # remove rules window
@@ -126,7 +127,6 @@ def browser(userlist, index, channel):
                             rules_button.click()
                     except NoSuchElementException:
                         pass
-                    time.sleep(15)
                     for _name in _namelist:
                         chat_field.send_keys("{cmd} {name}".format(cmd=command, name=_name), Keys.ENTER)
                         banned_names.write(_name)
