@@ -36,5 +36,5 @@ i suggest starting with 1 and working your way up (I can run 8 on a Ryzen 7 3700
 
 <div>
 <h3> If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):</h3>
-https://www.paypal.com/donate?hosted_button_id=QALV3FBTG39FN
+https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C
 </div>

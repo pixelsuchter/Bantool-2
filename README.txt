@@ -32,4 +32,4 @@ How to use:
 
 
 If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):
-https://www.paypal.com/donate?hosted_button_id=QALV3FBTG39FN
+https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C
