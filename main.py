@@ -10,6 +10,7 @@ import glob
 try:
     from selenium.common.exceptions import *
     from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
     from selenium.webdriver.common.by import By
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.ui import WebDriverWait
@@ -90,19 +91,17 @@ def split_files(channel):
             f = open("namelist_split{num}.txt".format(num=i), "w")
             split_namelists.append(f)
         with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
-            _banned_names = sorted(banned_names.readlines())
-            index = 0
-            temp_count = 0
-            for name in namelist:
-                print("removing already banned users: {} name(s) left".format(name_count-temp_count))
-                banned_names.seek(0)
-                if name in _banned_names:
-                    temp_count += 1
-                    continue
-                else:
-                    split_namelists[index % num_windows].write(name)
-                    index += 1
-                    temp_count += 1
+            _nameset = set(sorted(namelist.readlines()))
+            _banned_set = set(sorted(banned_names.readlines()))
+            print("Creating difference for {streamer}".format(streamer=channel))
+            start = time.time()
+            difference = _nameset.difference(_banned_set)
+            end = time.time()
+            print("Creating difference took {:.4f}s".format(end - start))
+            for idx, name in enumerate(difference):
+                split_namelists[idx % num_windows].write(name)
+            for file in split_namelists:
+                file.close()
 
 
 def browser(userlist, index, channel):
@@ -111,26 +110,39 @@ def browser(userlist, index, channel):
         with open(userlist, "r") as _namelist, open("banned_part{index}.txt".format(index=index), "w+") as banned_names:
             if len(_namelist.readlines()) > 0:
                 _namelist.seek(0)
-                with webdriver.Firefox(executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=config["Firefox_profile"],
+                profile = webdriver.FirefoxProfile(config["Firefox_profile"])
+                profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
+                profile.set_preference("security.enterprise_roots.enabled", True)
+                options = Options()
+                if index != 0:
+                    options.add_argument('--headless')
+                with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
                                        firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
                     print(driver.profile.profile_dir)
-                    driver.set_window_size(500, 500)
-                    wait = WebDriverWait(driver, 10)
+                    driver.set_window_size(1000, 1000)
+                    wait = WebDriverWait(driver, 60)
+                    wait_rules = WebDriverWait(driver, 10)
                     driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
                     chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
                     chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
                     if chat_field.is_displayed():
                         chat_field.click()
                     try:  # remove rules window
-                        rules_button = driver.find_element(By.CSS_SELECTOR, ".dhNyXR")
+                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".dhNyXR")))
                         if rules_button.is_displayed():
                             rules_button.click()
-                    except NoSuchElementException:
+                    except (NoSuchElementException, TimeoutException):
                         pass
+                    if chat_field.is_displayed():
+                        chat_field.click()
                     for _name in _namelist:
-                        chat_field.send_keys("{cmd} {name}".format(cmd=command, name=_name), Keys.ENTER)
-                        banned_names.write(_name)
-                        counter[index] += 1
+                        try:
+                            chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                            chat_field.send_keys("{cmd} {name}".format(cmd=command, name=_name), Keys.ENTER)
+                            banned_names.write(_name)
+                            counter[index] += 1
+                        except (ElementNotInteractableException, ElementClickInterceptedException):
+                            pass
     except LookupError:
         print("couldn't start instance {}".format(index))
     finally:
