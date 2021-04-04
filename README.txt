@@ -29,3 +29,7 @@ How to use:
   12) The amount of browser windows you should put set is dependent on your computer,
   13) i suggest starting with 1 and working your way up (I can run 8 on a Ryzen 7 3700x)
   14) After filling the namelist and setting the config you can now open the main.exe or main.py again
+
+
+If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):
+https://www.paypal.com/donate?hosted_button_id=QALV3FBTG39FN
