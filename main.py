@@ -111,13 +111,14 @@ class Bantool:
                 num_of_files_to_create = min(len(difference) // self.names_per_file, self.num_windows)
                 self.done = [False] * num_of_files_to_create  # update status lists
                 self.counter = [0] * num_of_files_to_create  # update status lists
-                for i in range(num_of_files_to_create):
-                    f = open("namelist_split{num}.txt".format(num=i), "w")
-                    split_namelists.append(f)
-                for idx, name in enumerate(difference):
-                    split_namelists[idx % num_of_files_to_create].write(name)
-                for file in split_namelists:
-                    file.close()
+                if num_of_files_to_create > 0:
+                    for i in range(num_of_files_to_create):
+                        f = open("namelist_split{num}.txt".format(num=i), "w")
+                        split_namelists.append(f)
+                    for idx, name in enumerate(difference):
+                        split_namelists[idx % num_of_files_to_create].write(name)
+                    for file in split_namelists:
+                        file.close()
 
 
     def browser(self, userlist, index, channel):
