@@ -31,5 +31,8 @@ How to use:
   14) After filling the namelist and setting the config you can now open the main.exe or main.py again
 
 
+CVS_Exporter: A tool to crudely filter out followbots from your current followers using commanderroots followlist tool (https://twitch-tools.rootonline.de/followerlist_viewer.php)
+It will go through the list and if more than 10 people followed in a single second (highly unlikely for normal follows, but common for followbots), it will sort them into the output file
+
 If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):
 https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C

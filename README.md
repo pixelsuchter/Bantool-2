@@ -34,6 +34,12 @@ i suggest starting with 1 and working your way up (I can run 8 on a Ryzen 7 3700
 <li>After filling the namelist and setting the config you can now open the main.exe or main.py again</li>
 </ol>
 
+
+<h3>CVS_Exporter:</h3>
+A tool to crudely filter out followbots from your current followers using commanderroots followlist tool (https://twitch-tools.rootonline.de/followerlist_viewer.php) <br>
+It will go through the list and if more than 10 people followed in a single second (highly unlikely for normal follows, but common for followbots), it will sort them into the output file
+
+
 <div>
 <h3> If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):</h3>
 https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C
