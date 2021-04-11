@@ -108,7 +108,7 @@ class Bantool:
 
                 # preparing the namelist files
                 split_namelists = []
-                num_of_files_to_create = min(len(difference) // self.names_per_file, self.num_windows)
+                num_of_files_to_create = max(min(len(difference) // self.names_per_file, self.num_windows), 1)
                 self.done = [False] * num_of_files_to_create  # update status lists
                 self.counter = [0] * num_of_files_to_create  # update status lists
                 if num_of_files_to_create > 0:
