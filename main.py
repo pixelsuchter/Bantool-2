@@ -29,6 +29,14 @@ except ImportError:
     from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
     from selenium.webdriver.support.expected_conditions import presence_of_element_located
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    # installs tqdm module if it is missing
+    print('Installing tqdm')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
+    from tqdm import tqdm
+
 
 class Bantool:
     def __init__(self):
@@ -134,7 +142,7 @@ class Bantool:
                         options.add_argument('--headless')
                     with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
                                            firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
-                        print(driver.profile.profile_dir)
+                        # print(driver.profile.profile_dir)
                         driver.set_window_size(1000, 1000)
                         wait = WebDriverWait(driver, 60)
                         wait_rules = WebDriverWait(driver, 10)
@@ -178,10 +186,16 @@ class Bantool:
             for idx, namelist in enumerate(split_banlists):
                 _thread.start_new_thread(self.browser, (namelist, idx, channel))
                 time.sleep(2)
+            progressbar = tqdm(total=num_names, unit=" Names", file=sys.stdout, colour="#0FEED0")
+            old_sum = 0
+            new_sum = sum(self.counter)
             while sum(self.done) < num_banlists:
-                print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
-                                                                             elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
-                time.sleep(1)
+                old_sum = new_sum
+                new_sum = sum(self.counter)
+                progressbar.update(new_sum-old_sum)
+                # print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
+                #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
+                time.sleep(0.01)
             part_files = glob.glob("banned_part*.txt")
             with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist:
                 for filePath in part_files:
