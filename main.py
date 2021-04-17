@@ -186,7 +186,7 @@ class Bantool:
             for idx, namelist in enumerate(split_banlists):
                 _thread.start_new_thread(self.browser, (namelist, idx, channel))
                 time.sleep(2)
-            progressbar = tqdm(total=num_names, unit=" Names", file=sys.stdout, colour="#0FEED0")
+            progressbar = tqdm(total=num_names, unit=" Names", file=sys.stdout, colour="#0FEED0", ascii=True)
             old_sum = 0
             new_sum = sum(self.counter)
             while sum(self.done) < num_banlists:
