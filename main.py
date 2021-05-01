@@ -57,6 +57,8 @@ class Bantool:
         self.do_unban = False
         self.do_unblock = False
         self.greeting_emote = ""
+        self.chunk_size = 1000
+        self.thread_lock = _thread.allocate_lock()
 
     def load_config(self):
         try:
@@ -71,6 +73,7 @@ class Bantool:
                 assert type(self.config["Unban"]) == bool
                 assert type(self.config["Unblock"]) == bool
                 assert type(self.config["Greeting Emote"]) == str
+                assert type(self.config["Chunk size"]) == int
             self.channels = self.config["twitch_channels"]
             self.account_name = self.config["account_name"]
             self.num_windows = self.config["Number_of_browser_windows"]
@@ -79,6 +82,7 @@ class Bantool:
             self.do_unban = self.config["Unban"]
             self.do_unblock = self.config["Unblock"]
             self.greeting_emote = self.config["Greeting Emote"]
+            self.chunk_size = self.config["Chunk size"]
         except (OSError, json.JSONDecodeError, AssertionError, KeyError) as e:
             print("Config file does not exist or corrupt, creating default config\n")
             if os.path.isfile("config.json"):
@@ -87,8 +91,8 @@ class Bantool:
                 os.rename("config.json", "config.json.broken")
             with open("config.json", "w") as f:
                 config = {"twitch_channels": [""], "account_name": "", "Number_of_browser_windows": 1, "Firefox_profile": "", "Block": True, "Ban": True, "Unban": True,
-                          "Unblock": True, "Greeting Emote": ""}
-                json.dump(config, f)
+                          "Unblock": True, "Greeting Emote": "", "Chunk size": 1000}
+                json.dump(config, f, sort_keys=True, indent=4)
 
     def check_files(self):
         if not os.path.isfile("namelist.txt"):
@@ -115,7 +119,6 @@ class Bantool:
             sorted_Names = sorted(name_set)
             for _name in sorted_Names:
                 file.write(f"{_name}\n")
-                file.flush()
 
     def delete_split_namelists(self):
         namelist_files = glob.glob("ban_namelist_split*.txt")
@@ -202,43 +205,53 @@ class Bantool:
                             file.close()
 
     def browser(self, userlist, index, channel, command_list):
+        def chunks(lst, n):
+            """Yield successive n-sized chunks from lst."""
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+
         try:
-            with open(userlist, "r") as _namelist, open("banned_part{index}.txt".format(index=index), "w") as banned_names:
+            with open(userlist, "r") as _namelist:
                 if len(_namelist.readlines()) > 0:
                     self.browser_status[index] = "Starting"
                     _namelist.seek(0)
                     _namelist_stripped = sorted(map(str.strip, _namelist.readlines()))
-                    profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
-                    profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
-                    profile.set_preference("security.enterprise_roots.enabled", True)
-                    options = Options()
-                    if index != 0 and self.headless_mode:
-                        options.add_argument('--headless')
-                    with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
-                                           firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
-                        # print(driver.profile.profile_dir)
-                        driver.set_window_size(1000, 1000)
-                        wait = WebDriverWait(driver, 60)
-                        wait_rules = WebDriverWait(driver, 5)
-                        driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
+            chunked_lists = chunks(_namelist_stripped, self.chunk_size)
+            for chunk in chunked_lists:
+                self.thread_lock.acquire()
+                profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
+                profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
+                profile.set_preference("security.enterprise_roots.enabled", True)
+                options = Options()
+                if index != 0 and self.headless_mode:
+                    options.add_argument('--headless')
+                with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
+                                       firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
+                    # print(driver.profile.profile_dir)
+                    self.thread_lock.release()
+                    driver.set_window_size(1000, 1000)
+                    wait = WebDriverWait(driver, 60)
+                    wait_rules = WebDriverWait(driver, 5)
+                    driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
+                    chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                    chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
+                    if chat_field.is_displayed():
+                        chat_field.click()
+                    try:  # remove rules window
+                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".dhNyXR")))
+                        if rules_button.is_displayed():
+                            rules_button.click()
+                    except (NoSuchElementException, TimeoutException):
+                        pass
+                    if chat_field.is_displayed():
+                        chat_field.click()
                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
-                        chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
-                        if chat_field.is_displayed():
-                            chat_field.click()
-                        try:  # remove rules window
-                            rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".dhNyXR")))
-                            if rules_button.is_displayed():
-                                rules_button.click()
-                        except (NoSuchElementException, TimeoutException):
-                            pass
-                        if chat_field.is_displayed():
-                            chat_field.click()
-                            chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
-                            chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
-                            self.browser_status[index] = "Ready"
-                            while not self.all_browsers_ready:
-                                time.sleep(0.1)
-                            for _name in _namelist_stripped:
+                        chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
+                        self.browser_status[index] = "Ready"
+                        while not self.all_browsers_ready:
+                            time.sleep(0.1)
+                        with open("banned_part{index}.txt".format(index=index), "w") as banned_names:
+                            for _name in chunk:
                                 try:
                                     for command in command_list:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
@@ -247,6 +260,10 @@ class Bantool:
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
                                     pass
+                with self.thread_lock:
+                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist, open("banned_part{index}.txt".format(index=index), "r") as banned_names:
+                        _names = banned_names.readlines()
+                        banlist.writelines(_names)
         except LookupError:
             print("couldn't start instance {}".format(index))
         finally:
@@ -286,7 +303,7 @@ class Bantool:
                 print("Starting Browsers")
                 for idx, namelist in enumerate(split_banlists):
                     _thread.start_new_thread(self.browser, (namelist, idx, channel, commands))
-                    time.sleep(2)
+                    # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
                     pass
             else:
                 _cleanup_banfiles()
@@ -375,7 +392,7 @@ class Bantool:
             if commands:
                 for idx, namelist in enumerate(split_banlists):
                     _thread.start_new_thread(self.browser, (namelist, idx, channel, ["/unban"]))
-                    time.sleep(2)
+                    # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
             else:  # Nothing to do
                 _cleanup_unban_files()
                 return
