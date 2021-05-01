@@ -64,7 +64,7 @@ with open("namelist_cleaned.txt", "w") as name_file, open("user_id_list_cleaned.
         user_infos = twitch.get_users(logins=chunk).get("data")
         for user_info in user_infos:
             name_file.write(f"{user_info.get('login')}\n")
-            id_file.write(f"{user_info.get('login')}\n")
+            id_file.write(f"{user_info.get('id')}\n")
             name_file.flush()
             id_file.flush()
 
@@ -73,7 +73,7 @@ with open("namelist_cleaned.txt", "w") as name_file, open("user_id_list_cleaned.
         user_infos = twitch.get_users(user_ids=chunk).get("data")
         for user_info in user_infos:
             name_file.write(f"{user_info.get('login')}\n")
-            id_file.write(f"{user_info.get('login')}\n")
+            id_file.write(f"{user_info.get('id')}\n")
             name_file.flush()
             id_file.flush()
 
