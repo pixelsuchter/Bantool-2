@@ -14,7 +14,10 @@ with open("Followerlist.csv", "r", newline='') as input_file:
     for line in input_csv:
         if line:
             if line != ['userName', 'userID', 'accCreatedAt', 'followCreatedAt'] or line != ['userName', 'userID', 'accCreatedAt', 'followCreatedAt', 'isKnownBot']:
-                username, userID, create_time, follow_time = line
+                if len(line) == 4:
+                    username, userID, create_time, follow_time = line
+                else:
+                    username, userID, create_time, follow_time, isBot = line
                 if follow_time in follow_dict.keys():
                     follow_dict[follow_time].append((username, userID))
                 else:
