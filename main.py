@@ -230,15 +230,16 @@ class Bantool:
                     # print(driver.profile.profile_dir)
                     self.thread_lock.release()
                     driver.set_window_size(1000, 1000)
-                    wait = WebDriverWait(driver, 60)
+                    wait = WebDriverWait(driver, 120)
                     wait_rules = WebDriverWait(driver, 5)
                     driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
                     chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
                     chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
+                    time.sleep(1)
                     if chat_field.is_displayed():
                         chat_field.click()
                     try:  # remove rules window
-                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".dhNyXR")))
+                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".jQtUJo")))
                         if rules_button.is_displayed():
                             rules_button.click()
                     except (NoSuchElementException, TimeoutException):
@@ -259,7 +260,12 @@ class Bantool:
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
-                                    pass
+                                    try:  # remove rules window again, if nescessary
+                                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".jQtUJo")))
+                                        if rules_button.is_displayed():
+                                            rules_button.click()
+                                    except (NoSuchElementException, TimeoutException):
+                                        pass
                 with self.thread_lock:
                     with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist, open("banned_part{index}.txt".format(index=index), "r") as banned_names:
                         _names = banned_names.readlines()
