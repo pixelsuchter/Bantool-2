@@ -9,6 +9,9 @@ import glob
 import colorama
 from typing import List
 
+chat_css_selector = ".sc-fzpkJw"
+rules_window_accept_css_selector = ".UUzbw"
+
 colorama.init()
 try:
     from selenium.common.exceptions import *
@@ -233,20 +236,20 @@ class Bantool:
                     wait = WebDriverWait(driver, 120)
                     wait_rules = WebDriverWait(driver, 5)
                     driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
-                    chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                    chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                     chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
                     time.sleep(1)
                     if chat_field.is_displayed():
                         chat_field.click()
                     try:  # remove rules window
-                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".jQtUJo")))
+                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
                         if rules_button.is_displayed():
                             rules_button.click()
                     except (NoSuchElementException, TimeoutException):
                         pass
                     if chat_field.is_displayed():
                         chat_field.click()
-                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                         chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
                         self.browser_status[index] = "Ready"
                         while not self.all_browsers_ready:
@@ -255,13 +258,13 @@ class Bantool:
                             for _name in chunk:
                                 try:
                                     for command in command_list:
-                                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".ScInputBase-sc-1wz0osy-0")))
+                                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                                         chat_field.send_keys("{cmd} {name}".format(cmd=command, name=_name), Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
                                     try:  # remove rules window again, if nescessary
-                                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, ".jQtUJo")))
+                                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
                                         if rules_button.is_displayed():
                                             rules_button.click()
                                     except (NoSuchElementException, TimeoutException):
