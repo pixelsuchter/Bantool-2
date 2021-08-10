@@ -9,8 +9,8 @@ import glob
 import colorama
 from typing import List
 
-chat_css_selector = ".sc-fzpkJw"
-rules_window_accept_css_selector = ".UUzbw"
+chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
+rules_window_accept_css_selector = ".bTWzyW"
 
 colorama.init()
 try:
