@@ -259,7 +259,10 @@ class Bantool:
                                 try:
                                     for command in command_list:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                                        chat_field.send_keys("{cmd} {name}".format(cmd=command, name=_name), Keys.ENTER)
+                                        if command == "/ban":
+                                            chat_field.send_keys(f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator", Keys.ENTER)
+                                        else:
+                                            chat_field.send_keys(f"{command} {_name}", Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
