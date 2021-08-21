@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+local_scheme = "dirty-tag"
+version_scheme = "release-branch-semver"
+write_to = "bantool/_version.py"
+fallback_version = "0"
+
+[tool.black]
+line-length = 88
+skip-string-normalization = true
+target-version = ['py39']
+
