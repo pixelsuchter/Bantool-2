@@ -10,6 +10,12 @@ from typing import List
 
 import colorama
 
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    ElementNotInteractableException,
+    ElementClickInterceptedException,
+)
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -20,103 +26,60 @@ from tqdm import tqdm
 
 import logging
 
+from bantool.config import ConfigNT
+
 logger = logging.getLogger(__name__)
+CHAT_CSS_SELECTOR = "textarea.ScInputBase-sc-1wz0osy-0"
+RULES_WINDOW_ACCEPT_CSS_SELECTOR = ".bTWzyW"
+
 
 class Bantool:
-    def __init__(self):
-        self.config = dict()
+    account_name: str
+    channels: List[str]
+    chunk_size: int
+    profile: str
+    do_ban: bool
+    do_block: bool
+    do_unban: bool
+    do_unblock: bool
+    greeting_emote: str
+    num_windows: int
+    namelist: str
+
+    def __init__(self, config: ConfigNT):
+        self.config = config._asdict()
+
+        self.channels = config.twitch_channels
+        self.account_name = config.account_name
+        self.num_windows = config.number_of_browser_windows
+        self.do_ban = config.ban
+        self.do_block = config.block
+        self.do_unban = config.unban
+        self.do_unblock = config.unblock
+        self.greeting_emote = config.greeting_emote
+        self.chunk_size = config.chunk_size
+        self.namelist = config.namelist
+        self.profile = config.firefox_profile
+
         self.browser_status = ["Not Started"]
         self.all_browsers_ready = False
         self.counter = [0]
-        self.channels = [""]
-        self.account_name = None
-        self.num_windows = 0
-        self.names_per_file = 500
-        self.headless_mode = False
-        self.do_ban = False
-        self.do_block = False
-        self.do_unban = False
-        self.do_unblock = False
-        self.greeting_emote = ""
-        self.chunk_size = 1000
+
         self.thread_lock = _thread.allocate_lock()
-
-    def load_config(self):
         try:
-            with open("config.json", "r") as cfg:
-                self.config = json.load(cfg)
-                assert type(self.config["twitch_channels"]) == list
-                assert type(self.config["account_name"]) == str
-                assert type(self.config["Number_of_browser_windows"]) == int
-                assert type(self.config["Firefox_profile"]) == str
-                assert type(self.config["Block"]) == bool
-                assert type(self.config["Ban"]) == bool
-                assert type(self.config["Unban"]) == bool
-                assert type(self.config["Unblock"]) == bool
-                assert type(self.config["Greeting Emote"]) == str
-                assert type(self.config["Chunk size"]) == int
-            self.channels = self.config["twitch_channels"]
-            self.account_name = self.config["account_name"]
-            self.num_windows = self.config["Number_of_browser_windows"]
-            self.do_ban = self.config["Ban"]
-            self.do_block = self.config["Block"]
-            self.do_unban = self.config["Unban"]
-            self.do_unblock = self.config["Unblock"]
-            self.greeting_emote = self.config["Greeting Emote"]
-            self.chunk_size = self.config["Chunk size"]
-        except (OSError, json.JSONDecodeError, AssertionError, KeyError) as e:
-            print("Config file does not exist or corrupt, creating default config\n")
-            if os.path.isfile("config.json"):
-                if os.path.isfile("config.json.broken"):
-                    os.remove("config.json.broken")
-                os.rename("config.json", "config.json.broken")
-            with open("config.json", "w") as f:
-                config = {
-                    "twitch_channels": [""],
-                    "account_name": "",
-                    "Number_of_browser_windows": 1,
-                    "Firefox_profile": "",
-                    "Block": True,
-                    "Ban": True,
-                    "Unban": True,
-                    "Unblock": True,
-                    "Greeting Emote": "",
-                    "Chunk size": 1000,
-                }
-                json.dump(config, f, sort_keys=True, indent=4)
+            self.check_config()
+        except AssertionError as e:
+            # Repackage assertion error
+            raise ValueError(str(e)) from None
 
-    def check_files(self):
-        if not os.path.isfile("namelist.txt"):
-            print(
-                "Namelist does not exist, creating file. Please insert names and restart"
-            )
-            with open("namelist.txt", "x"):
-                pass
-            input("Press enter to exit")
-            exit(0)
+    def check_config(self):
+        if not os.path.isfile(self.namelist):
+            logger.error("Namelist not found: %s.", self.namelist)
 
-        if (
-            self.channels == [""]
-            or not self.account_name
-            or not self.num_windows
-            or not self.config["Firefox_profile"]
-        ):
-            print("Config not set correctly")
-            input("Press enter to exit")
-            exit(0)
-
-    def sort_file_and_dedupe(self, filename: str):
-        with open(filename, "r") as file:
-            namelist = file.readlines()
-            name_set = set()
-            for name in namelist:
-                _name = name.strip().lower()
-                if _name:
-                    name_set.add(_name)
-        with open(filename, "w") as file:
-            sorted_Names = sorted(name_set)
-            for _name in sorted_Names:
-                file.write(f"{_name}\n")
+        assert self.channels is not [""], "Channel(s) required"
+        assert self.account_name, "Account name required"
+        assert self.num_windows, "Number of windows required"
+        assert self.profile, "Firefox profile required"
 
     def delete_split_namelists(self):
         namelist_files = glob.glob("ban_namelist_split*.txt")
@@ -229,7 +192,8 @@ class Bantool:
         def chunks(lst, n):
             """Yield successive n-sized chunks from lst."""
             for i in range(0, len(lst), n):
-                yield lst[i : i + n]
+                end = i + n
+                yield lst[i:end]
 
         try:
             with open(userlist, "r") as _namelist:
@@ -240,7 +204,7 @@ class Bantool:
             chunked_lists = chunks(_namelist_stripped, self.chunk_size)
             for chunk in chunked_lists:
                 self.thread_lock.acquire()
-                profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
+                profile = webdriver.FirefoxProfile(self.profile)
                 profile.set_preference(
                     "security.insecure_field_warning.contextual.enabled", False
                 )
@@ -266,7 +230,7 @@ class Bantool:
                     )
                     chat_field = wait.until(
                         presence_of_element_located(
-                            (By.CSS_SELECTOR, chat_css_selector)
+                            (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
                         )
                     )
                     chat_welcome_message = wait.until(
@@ -280,7 +244,7 @@ class Bantool:
                     try:  # remove rules window
                         rules_button = wait_rules.until(
                             presence_of_element_located(
-                                (By.CSS_SELECTOR, rules_window_accept_css_selector)
+                                (By.CSS_SELECTOR, RULES_WINDOW_ACCEPT_CSS_SELECTOR)
                             )
                         )
                         if rules_button.is_displayed():
@@ -291,7 +255,7 @@ class Bantool:
                         chat_field.click()
                         chat_field = wait.until(
                             presence_of_element_located(
-                                (By.CSS_SELECTOR, chat_css_selector)
+                                (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
                             )
                         )
                         chat_field.send_keys(
@@ -309,7 +273,7 @@ class Bantool:
                                     for command in command_list:
                                         chat_field = wait.until(
                                             presence_of_element_located(
-                                                (By.CSS_SELECTOR, chat_css_selector)
+                                                (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
                                             )
                                         )
                                         if command == "/ban":
@@ -332,7 +296,7 @@ class Bantool:
                                             presence_of_element_located(
                                                 (
                                                     By.CSS_SELECTOR,
-                                                    rules_window_accept_css_selector,
+                                                    RULES_WINDOW_ACCEPT_CSS_SELECTOR,
                                                 )
                                             )
                                         )
@@ -596,9 +560,6 @@ class Bantool:
             _cleanup_unban_files()
 
     def run(self):
-        self.load_config()
-        self.check_files()
-        self.sort_file_and_dedupe("namelist.txt")
         for chnl in self.channels:
             self.split_banfiles(chnl)
             self.start_browsers_ban(chnl)
