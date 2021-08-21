@@ -11,16 +11,4 @@ fallback_version = "0"
 [tool.black]
 line-length = 88
 skip-string-normalization = true
-target-version = ['py37']
-
-[tool.isort]
-atomic=true
-lines_after_imports=2
-lines_between_types=1
-multi_line_output=5
-line_length=88
-not_skip=__init__.py
-known_first_party =
-    bantool
-    tests
-ignore_trailing_comma=true
+target-version = ['py38']
