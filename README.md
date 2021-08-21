@@ -48,3 +48,15 @@ A tool to filter out users from a namelist if they don't have a valid twitch acc
 <h3> If you wanna throw me a few bucks, here is my paypal. (All donations are appreciated but will never be necessary):</h3>
 https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C
 </div>
+
+## Developer Information
+
+Clone this repo and create a python3.8 virtual environment.
+
+Install `pip-tools` and use the `pip-sync` utility to install dependencies:
+
+```shell
+pip install pip-tools
+pip-sync dev-requirements.txt requirements.txt
+python setup.py develop
+```
