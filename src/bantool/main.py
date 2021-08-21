@@ -466,7 +466,9 @@ class Bantool:
             self.start_browsers_unban(chnl)
             self.delete_split_namelists()
 
-
-if __name__ == "__main__":
+def main() -> None:
     tool = Bantool()
     tool.run()
+
+if __name__ == "__main__":
+    main()
