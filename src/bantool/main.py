@@ -21,7 +21,9 @@ try:
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-    from selenium.webdriver.support.expected_conditions import presence_of_element_located
+    from selenium.webdriver.support.expected_conditions import (
+        presence_of_element_located,
+    )
 except ImportError:
     # installs selenium module if it is missing, needed for browser control
     print('Installing selenium')
@@ -33,7 +35,9 @@ except ImportError:
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-    from selenium.webdriver.support.expected_conditions import presence_of_element_located
+    from selenium.webdriver.support.expected_conditions import (
+        presence_of_element_located,
+    )
 
 try:
     from tqdm import tqdm
@@ -93,19 +97,36 @@ class Bantool:
                     os.remove("config.json.broken")
                 os.rename("config.json", "config.json.broken")
             with open("config.json", "w") as f:
-                config = {"twitch_channels": [""], "account_name": "", "Number_of_browser_windows": 1, "Firefox_profile": "", "Block": True, "Ban": True, "Unban": True,
-                          "Unblock": True, "Greeting Emote": "", "Chunk size": 1000}
+                config = {
+                    "twitch_channels": [""],
+                    "account_name": "",
+                    "Number_of_browser_windows": 1,
+                    "Firefox_profile": "",
+                    "Block": True,
+                    "Ban": True,
+                    "Unban": True,
+                    "Unblock": True,
+                    "Greeting Emote": "",
+                    "Chunk size": 1000,
+                }
                 json.dump(config, f, sort_keys=True, indent=4)
 
     def check_files(self):
         if not os.path.isfile("namelist.txt"):
-            print("Namelist does not exist, creating file. Please insert names and restart")
+            print(
+                "Namelist does not exist, creating file. Please insert names and restart"
+            )
             with open("namelist.txt", "x"):
                 pass
             input("Press enter to exit")
             exit(0)
 
-        if self.channels == [""] or not self.account_name or not self.num_windows or not self.config["Firefox_profile"]:
+        if (
+            self.channels == [""]
+            or not self.account_name
+            or not self.num_windows
+            or not self.config["Firefox_profile"]
+        ):
             print("Config not set correctly")
             input("Press enter to exit")
             exit(0)
@@ -142,13 +163,17 @@ class Bantool:
             # File creation
             if not os.path.isdir("banned_lists"):  # create folder if nescessary
                 os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+            if not os.path.isfile(
+                "banned_lists/{streamer}.txt".format(streamer=channel)
+            ):  # create streamer specific file if non existant
                 with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
                     pass
             self.delete_split_namelists()
 
             # Calculating names to ban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
+            ) as banned_names:
                 # _nameset = set(sorted(namelist.readlines()))
                 _nameset = set(map(str.strip, namelist.readlines()))
                 _banned_set = set(map(str.strip, banned_names.readlines()))
@@ -160,8 +185,15 @@ class Bantool:
 
                 # preparing the banlistlist files
                 split_banlists = []
-                num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
-                self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
+                num_of_files_to_create = max(
+                    min(
+                        len(difference_to_ban) // self.names_per_file, self.num_windows
+                    ),
+                    1,
+                )
+                self.browser_status = [
+                    "Not Started"
+                ] * num_of_files_to_create  # update status lists
                 self.counter = [0] * num_of_files_to_create  # update status lists
                 if num_of_files_to_create > 0:
                     for i in range(num_of_files_to_create):
@@ -177,13 +209,17 @@ class Bantool:
             # File creation
             if not os.path.isdir("banned_lists"):  # create folder if nescessary
                 os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+            if not os.path.isfile(
+                "banned_lists/{streamer}.txt".format(streamer=channel)
+            ):  # create streamer specific file if non existant
                 with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
                     pass
             self.delete_split_namelists()
 
             # Calculating names to unban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
+            ) as banned_names:
                 _nameset = set(namelist.readlines())
                 _banned_set = set(banned_names.readlines())
                 print("Creating difference for {streamer}".format(streamer=channel))
@@ -195,8 +231,16 @@ class Bantool:
                 if difference_to_unban:
                     # preparing the unbanlist files
                     split_unbanlists = []
-                    num_of_files_to_create = max(min(len(difference_to_unban) // self.names_per_file, self.num_windows), 1)
-                    self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
+                    num_of_files_to_create = max(
+                        min(
+                            len(difference_to_unban) // self.names_per_file,
+                            self.num_windows,
+                        ),
+                        1,
+                    )
+                    self.browser_status = [
+                        "Not Started"
+                    ] * num_of_files_to_create  # update status lists
                     self.counter = [0] * num_of_files_to_create  # update status lists
                     if num_of_files_to_create > 0:
                         for i in range(num_of_files_to_create):
@@ -211,7 +255,7 @@ class Bantool:
         def chunks(lst, n):
             """Yield successive n-sized chunks from lst."""
             for i in range(0, len(lst), n):
-                yield lst[i:i + n]
+                yield lst[i : i + n]
 
         try:
             with open(userlist, "r") as _namelist:
@@ -223,57 +267,111 @@ class Bantool:
             for chunk in chunked_lists:
                 self.thread_lock.acquire()
                 profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
-                profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
+                profile.set_preference(
+                    "security.insecure_field_warning.contextual.enabled", False
+                )
                 profile.set_preference("security.enterprise_roots.enabled", True)
                 options = Options()
                 if index != 0 and self.headless_mode:
                     options.add_argument('--headless')
-                with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
-                                       firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
+                with webdriver.Firefox(
+                    options=options,
+                    executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe",
+                    firefox_profile=profile,
+                    firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe",
+                ) as driver:
                     # print(driver.profile.profile_dir)
                     self.thread_lock.release()
                     driver.set_window_size(1000, 1000)
                     wait = WebDriverWait(driver, 120)
                     wait_rules = WebDriverWait(driver, 5)
-                    driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
-                    chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                    chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
+                    driver.get(
+                        "https://www.twitch.tv/popout/{channel}/chat".format(
+                            channel=channel
+                        )
+                    )
+                    chat_field = wait.until(
+                        presence_of_element_located(
+                            (By.CSS_SELECTOR, chat_css_selector)
+                        )
+                    )
+                    chat_welcome_message = wait.until(
+                        presence_of_element_located(
+                            (By.CSS_SELECTOR, ".chat-line__status")
+                        )
+                    )
                     time.sleep(1)
                     if chat_field.is_displayed():
                         chat_field.click()
                     try:  # remove rules window
-                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
+                        rules_button = wait_rules.until(
+                            presence_of_element_located(
+                                (By.CSS_SELECTOR, rules_window_accept_css_selector)
+                            )
+                        )
                         if rules_button.is_displayed():
                             rules_button.click()
                     except (NoSuchElementException, TimeoutException):
                         pass
                     if chat_field.is_displayed():
                         chat_field.click()
-                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                        chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
+                        chat_field = wait.until(
+                            presence_of_element_located(
+                                (By.CSS_SELECTOR, chat_css_selector)
+                            )
+                        )
+                        chat_field.send_keys(
+                            f"{self.greeting_emote} {index} {self.greeting_emote}",
+                            Keys.ENTER,
+                        )
                         self.browser_status[index] = "Ready"
                         while not self.all_browsers_ready:
                             time.sleep(0.1)
-                        with open("banned_part{index}.txt".format(index=index), "w") as banned_names:
+                        with open(
+                            "banned_part{index}.txt".format(index=index), "w"
+                        ) as banned_names:
                             for _name in chunk:
                                 try:
                                     for command in command_list:
-                                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
+                                        chat_field = wait.until(
+                                            presence_of_element_located(
+                                                (By.CSS_SELECTOR, chat_css_selector)
+                                            )
+                                        )
                                         if command == "/ban":
-                                            chat_field.send_keys(f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator", Keys.ENTER)
+                                            chat_field.send_keys(
+                                                f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator",
+                                                Keys.ENTER,
+                                            )
                                         else:
-                                            chat_field.send_keys(f"{command} {_name}", Keys.ENTER)
+                                            chat_field.send_keys(
+                                                f"{command} {_name}", Keys.ENTER
+                                            )
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
-                                except (ElementNotInteractableException, ElementClickInterceptedException):
+                                except (
+                                    ElementNotInteractableException,
+                                    ElementClickInterceptedException,
+                                ):
                                     try:  # remove rules window again, if nescessary
-                                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
+                                        rules_button = wait_rules.until(
+                                            presence_of_element_located(
+                                                (
+                                                    By.CSS_SELECTOR,
+                                                    rules_window_accept_css_selector,
+                                                )
+                                            )
+                                        )
                                         if rules_button.is_displayed():
                                             rules_button.click()
                                     except (NoSuchElementException, TimeoutException):
                                         pass
                 with self.thread_lock:
-                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist, open("banned_part{index}.txt".format(index=index), "r") as banned_names:
+                    with open(
+                        "banned_lists/{streamer}.txt".format(streamer=channel), "a"
+                    ) as banlist, open(
+                        "banned_part{index}.txt".format(index=index), "r"
+                    ) as banned_names:
                         _names = banned_names.readlines()
                         banlist.writelines(_names)
         except LookupError:
@@ -286,14 +384,18 @@ class Bantool:
 
         def _cleanup_banfiles():
             part_files = glob.glob("banned_part*.txt")
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banlist:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
+            ) as banlist:
                 old_list = set(map(str.strip, banlist.readlines()))
                 for _filePath in part_files:
                     with open(_filePath, "r") as part_file:
                         old_list.update(set(part_file.readlines()))
                     os.remove(_filePath)
                 old_list = [f"{name}\n" for name in sorted(old_list)]
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "w") as banlist:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "w"
+            ) as banlist:
                 for name in sorted(old_list):
                     banlist.write(name)
 
@@ -314,7 +416,9 @@ class Bantool:
             if commands:
                 print("Starting Browsers")
                 for idx, namelist in enumerate(split_banlists):
-                    _thread.start_new_thread(self.browser, (namelist, idx, channel, commands))
+                    _thread.start_new_thread(
+                        self.browser, (namelist, idx, channel, commands)
+                    )
                     # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
                     pass
             else:
@@ -324,36 +428,63 @@ class Bantool:
             colorama.init(autoreset=True)
             fore = colorama.Fore
             i = 0
-            while "Not Started" in self.browser_status or "Starting" in self.browser_status:
+            while (
+                "Not Started" in self.browser_status
+                or "Starting" in self.browser_status
+            ):
                 if i == 0:
-                    print(f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end=""
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 1 or i == 9:
-                    print(f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 2 or i == 8:
-                    print(f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 3 or i == 7:
-                    print(f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 4 or i == 6:
-                    print(f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 5:
-                    print(f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]", end="")
+                    print(
+                        f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 else:
                     i = 0
             self.all_browsers_ready = True
             start = time.time()
-            progressbar = tqdm(total=num_names, unit=" Names", file=sys.stdout, colour="#0FEED0", ascii=True, desc="Banning")
+            progressbar = tqdm(
+                total=num_names,
+                unit=" Names",
+                file=sys.stdout,
+                colour="#0FEED0",
+                ascii=True,
+                desc="Banning",
+            )
             old_sum = 0
             new_sum = sum(self.counter)
             while "Ready" in self.browser_status:
@@ -372,17 +503,23 @@ class Bantool:
 
         def _cleanup_unban_files():
             part_files = glob.glob("banned_part*.txt")
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banlist:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
+            ) as banlist:
                 old_bannedlist = set(map(str.strip, banlist.readlines()))
                 unbanned_names = set()
                 for _filePath in part_files:
                     with open(_filePath, "r") as part_file:
-                        unbanned_names.update(set(map(str.strip, part_file.readlines())))
+                        unbanned_names.update(
+                            set(map(str.strip, part_file.readlines()))
+                        )
                     os.remove(_filePath)
                 banlist.seek(0)
                 new_banned_list = old_bannedlist.difference(unbanned_names)
                 new_banned_list = list(set([f"{name}\n" for name in new_banned_list]))
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "w") as banlist:
+            with open(
+                "banned_lists/{streamer}.txt".format(streamer=channel), "w"
+            ) as banlist:
                 for name in sorted(new_banned_list):
                     banlist.write(name)
 
@@ -403,7 +540,9 @@ class Bantool:
                 commands.append("/unblock")
             if commands:
                 for idx, namelist in enumerate(split_banlists):
-                    _thread.start_new_thread(self.browser, (namelist, idx, channel, ["/unban"]))
+                    _thread.start_new_thread(
+                        self.browser, (namelist, idx, channel, ["/unban"])
+                    )
                     # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
             else:  # Nothing to do
                 _cleanup_unban_files()
@@ -412,36 +551,63 @@ class Bantool:
             colorama.init(autoreset=True)
             fore = colorama.Fore
             i = 0
-            while "Not Started" in self.browser_status or "Starting" in self.browser_status:
+            while (
+                "Not Started" in self.browser_status
+                or "Starting" in self.browser_status
+            ):
                 if i == 0:
-                    print(f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end=""
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 1 or i == 9:
-                    print(f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 2 or i == 8:
-                    print(f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 3 or i == 7:
-                    print(f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 4 or i == 6:
-                    print(f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]", end="")
+                    print(
+                        f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 elif i == 5:
-                    print(f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]", end="")
+                    print(
+                        f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]",
+                        end="",
+                    )
                     i += 1
                     time.sleep(0.3)
                 else:
                     i = 0
             self.all_browsers_ready = True
             start = time.time()
-            progressbar = tqdm(total=num_names, unit=" Names", file=sys.stdout, colour="#0FEED0", ascii=True, desc="Unbanning")
+            progressbar = tqdm(
+                total=num_names,
+                unit=" Names",
+                file=sys.stdout,
+                colour="#0FEED0",
+                ascii=True,
+                desc="Unbanning",
+            )
             old_sum = 0
             new_sum = sum(self.counter)
             while "Ready" in self.browser_status:
@@ -466,9 +632,11 @@ class Bantool:
             self.start_browsers_unban(chnl)
             self.delete_split_namelists()
 
+
 def main() -> None:
     tool = Bantool()
     tool.run()
+
 
 if __name__ == "__main__":
     main()

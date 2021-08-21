@@ -1,6 +1,7 @@
 import csv
 import os
 
+
 def main():
     follow_dict = dict()
     if not os.path.isfile("Followerlist.csv"):
@@ -14,7 +15,18 @@ def main():
         input_csv = csv.reader(input_file)
         for line in input_csv:
             if line:
-                if line != ['userName', 'userID', 'accCreatedAt', 'followCreatedAt'] and line != ['userName', 'userID', 'accCreatedAt', 'followCreatedAt', 'isKnownBot']:
+                if line != [
+                    'userName',
+                    'userID',
+                    'accCreatedAt',
+                    'followCreatedAt',
+                ] and line != [
+                    'userName',
+                    'userID',
+                    'accCreatedAt',
+                    'followCreatedAt',
+                    'isKnownBot',
+                ]:
                     isBot = 0
                     if len(line) == 4:
                         username, userID, create_time, follow_time = line
@@ -36,6 +48,7 @@ def main():
                     if name_id[2] == "1":
                         name_file.write(name_id[0] + "\n")
                         id_file.write(name_id[1] + "\n")
+
 
 if __name__ == "__main__":
     main()
