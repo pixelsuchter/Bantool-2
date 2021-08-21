@@ -1,14 +1,38 @@
+[tool.poetry]
+name = "bantool-2"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+packages = [
+        {include = "bantool", from = "src"},
+        {include = "csv_exporter", from = "src"},
+        {include = "user_validator", from = "src"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+tqdm = "^4.62.1"
+twitchAPI = "^2.3.2"
+selenium = "^3.141.0"
+colorama = "^0.4.4"
+stringcase = "^1.2.0"
+click = "^8.0.1"
+
+[tool.poetry.dev-dependencies]
+isort = "^5.9.3"
+flake8 = "^3.9.2"
+tox = "^3.24.3"
+pytest = "^6.2.4"
+pytest-cov = "^2.12.1"
+black = "^21.7b0"
+mypy = "^0.910"
+
+[tool.poetry.scripts]
+bantool = "bantool.main:main"
+csv_exporter = "csv_exporter.main:main"
+user_validator = "user_validator.validate:main"
+
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
-local_scheme = "dirty-tag"
-version_scheme = "release-branch-semver"
-write_to = "src/bantool/_version.py"
-fallback_version = "0"
-
-[tool.black]
-line-length = 88
-skip-string-normalization = true
-target-version = ['py38']
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
