@@ -1,0 +1,10 @@
+-c requirements.txt
+isort
+flake8
+pre-commit
+tox
+mock
+pytest
+pytest-cov
+black
+mypy
