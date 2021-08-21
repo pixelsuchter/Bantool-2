@@ -16,9 +16,10 @@ class ConfigNT(NamedTuple):
     unblock: bool
     greeting_emote: str
     chunk_size: int
+    namelist: str
 
 
-def load_config(config_path: str) -> ConfigNT:
+def load_config_to_dict(config_path: str) -> dict:
     with open(config_path) as cfg:
         config = dict(json.load(cfg))
 
@@ -27,4 +28,4 @@ def load_config(config_path: str) -> ConfigNT:
         for k, v in config.items()
     }
 
-    return ConfigNT(**processed)
+    return processed
