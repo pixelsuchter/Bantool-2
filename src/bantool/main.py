@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from bantool.bantool import Bantool
-from bantool.config import ConfigNT, load_config
+from bantool.config import ConfigNT, load_config_to_dict
 from bantool.utils import sort_file_and_dedupe
 import argparse
 
@@ -48,7 +48,7 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
 
     config_dict = {}
     if config := args.config:
-        config_dict = load_config(config)
+        config_dict = load_config_to_dict(config)
 
     config_dict.update(dict(vars(args)))
     return ConfigNT(**{k: v for k, v in config_dict.items() if k in ConfigNT._fields()})
