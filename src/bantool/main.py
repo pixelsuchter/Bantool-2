@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import argparse
+import logging
+import sys
 from typing import List, Optional
+
 from bantool.bantool import Bantool
 from bantool.config import ConfigNT, load_config_to_dict
 from bantool.utils import sort_file_and_dedupe
-import argparse
-
-import logging
 
 logger = logging.getLogger("bantool")
 
@@ -17,7 +18,8 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
 
     config_group = parser.add_argument_group("config")
     config_group.add_argument(
-        "--config", help="Path to JSON config. Values overridden by CLI"
+        "--config", help="Path to JSON config. Values overridden by CLI",
+        default="config.json"
     )
 
     cli_group = parser.add_argument_group()
@@ -39,27 +41,50 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
     cli_group.add_argument("--unban", action="store_true", default=True)
     cli_group.add_argument("--greeting-emote", metavar=str)
     cli_group.add_argument("--chunk-size", metavar=int, default=1000)
-    cli_group.add_argument("--namelist", help="List of Twitch accounts, one per line.")
+    cli_group.add_argument(
+        "--namelist", help="List of Twitch bots to ban, one per line."
+    )
 
     if argv:
         args, unknown_args = parser.parse_known_args(argv)
     else:
         args, unknown_args = parser.parse_known_args()
 
+    # Load config.json, creating with defaults if missing
     config_dict = {}
     if config := args.config:
         config_dict = load_config_to_dict(config)
 
-    config_dict.update(dict(vars(args)))
+    # Prepare dict of CLI args given
+    args_dict = {
+        k: v
+        for k, v in dict(vars(args))
+        if v is not None
+    }
+    # Overwrite config file with given CLI args
+    config_dict.update(args_dict)
     return ConfigNT(**{k: v for k, v in config_dict.items() if k in ConfigNT._fields()})
 
 
 def main(argv: Optional[List[str]] = None) -> None:
+    exit_code = 0
+    logger.info("Starting Bantool.")
     args = parse_args(argv)
+
+    # Namelist contains names to ban
+    # First sort and dedup names
+    # Second split files into n, where n in # threads to use
+    # Third initalize Browsers each with split ban list
     sort_file_and_dedupe(args.namelist)
 
-    tool = Bantool(args)
-    tool.run()
+    try:
+        tool = Bantool(args)
+        tool.run()
+    except Exception as e:
+        logger.exception(e)
+        exit_code = 1
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
