@@ -2,8 +2,8 @@
 
 import _thread
 import glob
-import json
 import os
+import pathlib
 import sys
 import time
 from typing import List
@@ -24,6 +24,7 @@ from selenium.webdriver.support.expected_conditions import presence_of_element_l
 from selenium.webdriver.support.ui import WebDriverWait
 from tqdm import tqdm
 
+from bantool.utils import cleanup_banfiles, cleanup_unban_files
 import logging
 
 from bantool.config import ConfigNT
@@ -87,108 +88,64 @@ class Bantool:
             try:
                 os.remove(filePath)
             except OSError:
-                print("Error while deleting file : ", filePath)
+                logger.error("Error while deleting file : ", filePath)
         namelist_files = glob.glob("unban_namelist_split*.txt")
         for filePath in namelist_files:
             try:
                 os.remove(filePath)
             except OSError:
-                print("Error while deleting file : ", filePath)
+                logger.error("Error while deleting file : ", filePath)
 
-    def split_banfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile(
-                "banned_lists/{streamer}.txt".format(streamer=channel)
-            ):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
+    def split_files(self, channel: str, outprefix: str):
+        # File creation
+        lists_dir = pathlib.Path("banned_lists/")
+        streamer_banned_file = lists_dir / pathlib.Path(f"{channel}.txt")
+        if not lists_dir.exists():
+            lists_dir.os.mkdir()
+        if not streamer_banned_file.exists():
+            streamer_banned_file.touch()
 
-            # Calculating names to ban
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
-            ) as banned_names:
-                # _nameset = set(sorted(namelist.readlines()))
-                _nameset = set(map(str.strip, namelist.readlines()))
-                _banned_set = set(map(str.strip, banned_names.readlines()))
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_ban = sorted(_nameset.difference(_banned_set))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
+        # Cleanup Old Files
+        self.delete_split_namelists()
+        with open(self.namelist, "r") as namelist, open(
+            streamer_banned_file, "r"
+        ) as banned_names:
+            _nameset = set([line.strip() for line in namelist])
+            _banned_set = set([line.strip() for line in banned_names])
+        logger.info("Creating difference for %s", channel)
+        difference_to_ban = sorted(_nameset.difference(_banned_set))
 
-                # preparing the banlistlist files
-                split_banlists = []
-                num_of_files_to_create = max(
-                    min(
-                        len(difference_to_ban) // self.names_per_file, self.num_windows
-                    ),
-                    1,
-                )
-                self.browser_status = [
-                    "Not Started"
-                ] * num_of_files_to_create  # update status lists
-                self.counter = [0] * num_of_files_to_create  # update status lists
-                if num_of_files_to_create > 0:
-                    for i in range(num_of_files_to_create):
-                        f = open("ban_namelist_split{num}.txt".format(num=i), "w")
-                        split_banlists.append(f)
-                    for idx, name in enumerate(difference_to_ban):
-                        split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
-                    for file in split_banlists:
-                        file.close()
+        # preparing the banlistlist files
+        split_banlists = []
+        num_of_files_to_create = max(
+            min(len(difference_to_ban) // self.names_per_file, self.num_windows),
+            1,
+        )
+        # Split banlist based on available threads
+        self.browser_status = [
+            "Not Started"
+        ] * num_of_files_to_create  # update status lists
+        self.counter = [0] * num_of_files_to_create  # update status lists
+        logger.info("Creating %d files", num_of_files_to_create)
+        for i in range(num_of_files_to_create):
+            f = open(f"{outprefix}_namelist_split{i}.txt", "w")
+            split_banlists.append(f)
+        for idx, name in enumerate(difference_to_ban):
+            split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
+        for file in split_banlists:
+            file.close()
+
+    def split_banfiles(self, channel: str):
+        self.split_files(channel=channel, outprefix="ban")
 
     def split_unbanfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile(
-                "banned_lists/{streamer}.txt".format(streamer=channel)
-            ):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
-
-            # Calculating names to unban
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
-            ) as banned_names:
-                _nameset = set(namelist.readlines())
-                _banned_set = set(banned_names.readlines())
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_unban = sorted(_banned_set.difference(_nameset))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
-
-                if difference_to_unban:
-                    # preparing the unbanlist files
-                    split_unbanlists = []
-                    num_of_files_to_create = max(
-                        min(
-                            len(difference_to_unban) // self.names_per_file,
-                            self.num_windows,
-                        ),
-                        1,
-                    )
-                    self.browser_status = [
-                        "Not Started"
-                    ] * num_of_files_to_create  # update status lists
-                    self.counter = [0] * num_of_files_to_create  # update status lists
-                    if num_of_files_to_create > 0:
-                        for i in range(num_of_files_to_create):
-                            f = open("unban_namelist_split{num}.txt".format(num=i), "w")
-                            split_unbanlists.append(f)
-                        for idx, name in enumerate(difference_to_unban):
-                            split_unbanlists[idx % num_of_files_to_create].write(name)
-                        for file in split_unbanlists:
-                            file.close()
+        self.split_files(channel=channel, outprefix="unban")
 
     def browser(self, userlist, index, channel, command_list):
+        """
+        Runs on each thread.
+        """
+
         def chunks(lst, n):
             """Yield successive n-sized chunks from lst."""
             for i in range(0, len(lst), n):
@@ -211,14 +168,13 @@ class Bantool:
                 profile.set_preference("security.enterprise_roots.enabled", True)
                 options = Options()
                 if index != 0 and self.headless_mode:
-                    options.add_argument('--headless')
+                    options.add_argument("--headless")
                 with webdriver.Firefox(
                     options=options,
                     executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe",
                     firefox_profile=profile,
                     firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe",
                 ) as driver:
-                    # print(driver.profile.profile_dir)
                     self.thread_lock.release()
                     driver.set_window_size(1000, 1000)
                     wait = WebDriverWait(driver, 120)
@@ -313,34 +269,18 @@ class Bantool:
                         _names = banned_names.readlines()
                         banlist.writelines(_names)
         except LookupError:
-            print("couldn't start instance {}".format(index))
+            logger.error("couldn't start instance {}".format(index))
         finally:
             self.browser_status[index] = "Done"
 
     def start_browsers_ban(self, channel):
-        self.all_browsers_ready = False
 
-        def _cleanup_banfiles():
-            part_files = glob.glob("banned_part*.txt")
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
-            ) as banlist:
-                old_list = set(map(str.strip, banlist.readlines()))
-                for _filePath in part_files:
-                    with open(_filePath, "r") as part_file:
-                        old_list.update(set(part_file.readlines()))
-                    os.remove(_filePath)
-                old_list = [f"{name}\n" for name in sorted(old_list)]
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "w"
-            ) as banlist:
-                for name in sorted(old_list):
-                    banlist.write(name)
+        self.all_browsers_ready = False
 
         # Banning
         num_names = 0
-        split_banlists = glob.glob("ban_namelist_split*.txt")
-        num_banlists = len(split_banlists)
+        split_banlists = pathlib.glob("ban_namelist_split*.txt")
+        # This value is calculated when originally splitting files
         for filePath in split_banlists:
             with open(filePath, "r") as split_file:
                 num_names += len(split_file.readlines())
@@ -352,7 +292,7 @@ class Bantool:
             if self.account_name == channel and self.do_block:
                 commands.append("/block")
             if commands:
-                print("Starting Browsers")
+                logger.info("Starting Browsers")
                 for idx, namelist in enumerate(split_banlists):
                     _thread.start_new_thread(
                         self.browser, (namelist, idx, channel, commands)
@@ -360,9 +300,10 @@ class Bantool:
                     # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
                     pass
             else:
-                _cleanup_banfiles()
+                cleanup_banfiles(channel)
                 return  # Nothing to do
-            print("\n")
+            logger.info("\n")
+            # Wait until broswers report back done
             colorama.init(autoreset=True)
             fore = colorama.Fore
             i = 0
@@ -414,7 +355,6 @@ class Bantool:
                 else:
                     i = 0
             self.all_browsers_ready = True
-            start = time.time()
             progressbar = tqdm(
                 total=num_names,
                 unit=" Names",
@@ -429,48 +369,22 @@ class Bantool:
                 old_sum = new_sum
                 new_sum = sum(self.counter)
                 progressbar.update(new_sum - old_sum)
-                # print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
-                #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
                 time.sleep(0.01)
             progressbar.close()
-            print("Done")
-            _cleanup_banfiles()
+            logger.info("Done")
+            cleanup_banfiles(channel)
 
     def start_browsers_unban(self, channel):
         self.all_browsers_ready = False
 
-        def _cleanup_unban_files():
-            part_files = glob.glob("banned_part*.txt")
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "r"
-            ) as banlist:
-                old_bannedlist = set(map(str.strip, banlist.readlines()))
-                unbanned_names = set()
-                for _filePath in part_files:
-                    with open(_filePath, "r") as part_file:
-                        unbanned_names.update(
-                            set(map(str.strip, part_file.readlines()))
-                        )
-                    os.remove(_filePath)
-                banlist.seek(0)
-                new_banned_list = old_bannedlist.difference(unbanned_names)
-                new_banned_list = list(set([f"{name}\n" for name in new_banned_list]))
-            with open(
-                "banned_lists/{streamer}.txt".format(streamer=channel), "w"
-            ) as banlist:
-                for name in sorted(new_banned_list):
-                    banlist.write(name)
-
         # Unbanning
         num_names = 0
         split_banlists = glob.glob("unban_namelist_split*.txt")
-        num_banlists = len(split_banlists)
         for filePath in split_banlists:
             with open(filePath, "r") as split_file:
                 num_names += len(split_file.readlines())
 
         if num_names > 0:
-            start = time.time()
             commands = []
             if self.do_unban:
                 commands.append("/unban")
@@ -483,7 +397,7 @@ class Bantool:
                     )
                     # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
             else:  # Nothing to do
-                _cleanup_unban_files()
+                cleanup_unban_files(channel)
                 return
             print("\n")
             colorama.init(autoreset=True)
@@ -537,7 +451,6 @@ class Bantool:
                 else:
                     i = 0
             self.all_browsers_ready = True
-            start = time.time()
             progressbar = tqdm(
                 total=num_names,
                 unit=" Names",
@@ -556,8 +469,8 @@ class Bantool:
                 #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
                 time.sleep(0.01)
             progressbar.close()
-            print("Done")
-            _cleanup_unban_files()
+            logger.info("Done")
+            cleanup_unban_files(channel)
 
     def run(self):
         for chnl in self.channels:
