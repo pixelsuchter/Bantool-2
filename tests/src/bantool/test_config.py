@@ -25,7 +25,8 @@ class ThisTestCase(unittest.TestCase):
                 "Ban": true,
                 "Unban": true,
                 "Greeting Emote": ":wave:",
-                "Chunk size": 1000
+                "Chunk size": 1000,
+                "namelist": "names.txt"
             }
             """
         ).strip()
@@ -41,6 +42,7 @@ class ThisTestCase(unittest.TestCase):
             unban=True,
             greeting_emote=":wave:",
             chunk_size=1000,
+            namelist="names.txt",
         )
 
         self.tempfile.write(self.mock_config)
@@ -50,5 +52,5 @@ class ThisTestCase(unittest.TestCase):
         self.tempfile.close()
 
     def test_load_config_from_file(self):
-        found = config.load_config(self.tempfile.name)
-        self.assertEqual(found, self.example_config)
+        found = config.load_config_to_dict(self.tempfile.name)
+        self.assertEqual(found, self.example_config._asdict())
