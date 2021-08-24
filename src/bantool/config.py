@@ -44,7 +44,7 @@ default_dict: ConfigDict = dict(
     unban=True,
     unblock=True,
     greeting_emote="",
-    chunk_size=1,
+    chunk_size=1000,
     namelist="",
 )
 
