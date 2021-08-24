@@ -31,7 +31,6 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
     )
     cli_group.add_argument(
         "--firefox-profile",
-        dest="Firefox_profile",
         metavar=str,
         help="Name of new Firefox profile.",
     )
@@ -40,7 +39,7 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
     cli_group.add_argument("--ban", action="store_true", default=True)
     cli_group.add_argument("--unban", action="store_true", default=True)
     cli_group.add_argument("--greeting-emote", metavar=str)
-    cli_group.add_argument("--chunk-size", metavar=int, default=1000)
+    cli_group.add_argument("--chunk-size", metavar=int)
     cli_group.add_argument(
         "--namelist", help="List of Twitch bots to ban, one per line."
     )
@@ -58,12 +57,12 @@ def parse_args(argv: Optional[list] = None) -> ConfigNT:
     # Prepare dict of CLI args given
     args_dict = {
         k: v
-        for k, v in dict(vars(args))
+        for k, v in dict(vars(args)).items()
         if v is not None
     }
     # Overwrite config file with given CLI args
     config_dict.update(args_dict)
-    return ConfigNT(**{k: v for k, v in config_dict.items() if k in ConfigNT._fields()})
+    return ConfigNT(**{k: v for k, v in config_dict.items() if k in ConfigNT._fields})
 
 
 def main(argv: Optional[List[str]] = None) -> None:
