@@ -7,6 +7,7 @@ import time
 import _thread
 import glob
 import colorama
+import pyperclip
 from typing import List
 
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
@@ -26,6 +27,10 @@ except ImportError:
     # installs selenium module if it is missing, needed for browser control
     print('Installing selenium')
     subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
+    print('Installing colorama')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "colorama"])
+    print('Installing pyperclip')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
     from selenium.common.exceptions import *
     from selenium import webdriver
     from selenium.webdriver.firefox.options import Options
@@ -260,7 +265,8 @@ class Bantool:
                                     for command in command_list:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                                         if command == "/ban":
-                                            chat_field.send_keys(f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator", Keys.ENTER)
+                                            pc.copy(str(f"{command} {_name} Banned by Bantool, if you think this was a mistake, please contact a moderator"))
+                                            chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
                                         else:
                                             chat_field.send_keys(f"{command} {_name}", Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
