@@ -3,10 +3,12 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 import _thread
 import glob
 import colorama
+import pyperclip as pc
 from typing import List
 
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
@@ -26,6 +28,10 @@ except ImportError:
     # installs selenium module if it is missing, needed for browser control
     print('Installing selenium')
     subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
+    print('Installing colorama')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "colorama"])
+    print('Installing pyperclip')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
     from selenium.common.exceptions import *
     from selenium import webdriver
     from selenium.webdriver.firefox.options import Options
@@ -62,6 +68,7 @@ class Bantool:
         self.greeting_emote = ""
         self.chunk_size = 1000
         self.thread_lock = _thread.allocate_lock()
+        self.browser_lock = _thread.allocate_lock()
 
     def load_config(self):
         try:
@@ -138,76 +145,80 @@ class Bantool:
                 print("Error while deleting file : ", filePath)
 
     def split_banfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
+        if self.config["Ban"] or self.config["Block"]:
+            with open("namelist.txt", "r") as namelist:
+                # File creation
+                if not os.path.isdir("banned_lists"):  # create folder if nescessary
+                    os.mkdir("banned_lists")
+                if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
+                        pass
+                self.delete_split_namelists()
 
-            # Calculating names to ban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
-                # _nameset = set(sorted(namelist.readlines()))
-                _nameset = set(map(str.strip, namelist.readlines()))
-                _banned_set = set(map(str.strip, banned_names.readlines()))
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_ban = sorted(_nameset.difference(_banned_set))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
+                # Calculating names to ban
+                with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+                    # _nameset = set(sorted(namelist.readlines()))
+                    _nameset = set(map(str.strip, namelist.readlines()))
+                    _banned_set = set(map(str.strip, banned_names.readlines()))
+                    print("Creating difference for {streamer}".format(streamer=channel))
+                    start = time.time()
+                    difference_to_ban = sorted(_nameset.difference(_banned_set))
+                    end = time.time()
+                    print("Creating difference took {:.4f}s".format(end - start))
 
-                # preparing the banlistlist files
-                split_banlists = []
-                num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
-                self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
-                self.counter = [0] * num_of_files_to_create  # update status lists
-                if num_of_files_to_create > 0:
-                    for i in range(num_of_files_to_create):
-                        f = open("ban_namelist_split{num}.txt".format(num=i), "w")
-                        split_banlists.append(f)
-                    for idx, name in enumerate(difference_to_ban):
-                        split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
-                    for file in split_banlists:
-                        file.close()
-
-    def split_unbanfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
-
-            # Calculating names to unban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
-                _nameset = set(namelist.readlines())
-                _banned_set = set(banned_names.readlines())
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_unban = sorted(_banned_set.difference(_nameset))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
-
-                if difference_to_unban:
-                    # preparing the unbanlist files
-                    split_unbanlists = []
-                    num_of_files_to_create = max(min(len(difference_to_unban) // self.names_per_file, self.num_windows), 1)
+                    # preparing the banlistlist files
+                    split_banlists = []
+                    num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
                     self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
                     self.counter = [0] * num_of_files_to_create  # update status lists
                     if num_of_files_to_create > 0:
                         for i in range(num_of_files_to_create):
-                            f = open("unban_namelist_split{num}.txt".format(num=i), "w")
-                            split_unbanlists.append(f)
-                        for idx, name in enumerate(difference_to_unban):
-                            split_unbanlists[idx % num_of_files_to_create].write(name)
-                        for file in split_unbanlists:
+                            f = open("ban_namelist_split{num}.txt".format(num=i), "w")
+                            split_banlists.append(f)
+                        for idx, name in enumerate(difference_to_ban):
+                            split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
+                        for file in split_banlists:
                             file.close()
 
+    def split_unbanfiles(self, channel):
+        if self.config["Unban"] or self.config["Unblock"]:
+            with open("namelist.txt", "r") as namelist:
+                # File creation
+                if not os.path.isdir("banned_lists"):  # create folder if nescessary
+                    os.mkdir("banned_lists")
+                if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
+                        pass
+                self.delete_split_namelists()
+
+                # Calculating names to unban
+                with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+                    _nameset = set(namelist.readlines())
+                    _banned_set = set(banned_names.readlines())
+                    print("Creating difference for {streamer}".format(streamer=channel))
+                    start = time.time()
+                    difference_to_unban = sorted(_banned_set.difference(_nameset))
+                    end = time.time()
+                    print("Creating difference took {:.4f}s".format(end - start))
+
+                    if difference_to_unban:
+                        # preparing the unbanlist files
+                        split_unbanlists = []
+                        num_of_files_to_create = max(min(len(difference_to_unban) // self.names_per_file, self.num_windows), 1)
+                        self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
+                        self.counter = [0] * num_of_files_to_create  # update status lists
+                        if num_of_files_to_create > 0:
+                            for i in range(num_of_files_to_create):
+                                f = open("unban_namelist_split{num}.txt".format(num=i), "w")
+                                split_unbanlists.append(f)
+                            for idx, name in enumerate(difference_to_unban):
+                                split_unbanlists[idx % num_of_files_to_create].write(name)
+                            for file in split_unbanlists:
+                                file.close()
+
     def browser(self, userlist, index, channel, command_list):
+        _lock = self.browser_lock  # cached reference to avoid repeated self lookups
+
         def chunks(lst, n):
             """Yield successive n-sized chunks from lst."""
             for i in range(0, len(lst), n):
@@ -260,9 +271,13 @@ class Bantool:
                                     for command in command_list:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                                         if command == "/ban":
-                                            chat_field.send_keys(f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator", Keys.ENTER)
+                                            with _lock:
+                                                pc.copy(str(f"{command} {_name} Banned by Bantool, if you think this was a mistake, please contact a moderator"))
+                                                chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
                                         else:
-                                            chat_field.send_keys(f"{command} {_name}", Keys.ENTER)
+                                            with _lock:
+                                                pc.copy(str(f"{command} {_name}"))
+                                                chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
