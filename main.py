@@ -143,74 +143,76 @@ class Bantool:
                 print("Error while deleting file : ", filePath)
 
     def split_banfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
+        if self.config["Ban"] or self.config["Block"]:
+            with open("namelist.txt", "r") as namelist:
+                # File creation
+                if not os.path.isdir("banned_lists"):  # create folder if nescessary
+                    os.mkdir("banned_lists")
+                if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
+                        pass
+                self.delete_split_namelists()
 
-            # Calculating names to ban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
-                # _nameset = set(sorted(namelist.readlines()))
-                _nameset = set(map(str.strip, namelist.readlines()))
-                _banned_set = set(map(str.strip, banned_names.readlines()))
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_ban = sorted(_nameset.difference(_banned_set))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
+                # Calculating names to ban
+                with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+                    # _nameset = set(sorted(namelist.readlines()))
+                    _nameset = set(map(str.strip, namelist.readlines()))
+                    _banned_set = set(map(str.strip, banned_names.readlines()))
+                    print("Creating difference for {streamer}".format(streamer=channel))
+                    start = time.time()
+                    difference_to_ban = sorted(_nameset.difference(_banned_set))
+                    end = time.time()
+                    print("Creating difference took {:.4f}s".format(end - start))
 
-                # preparing the banlistlist files
-                split_banlists = []
-                num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
-                self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
-                self.counter = [0] * num_of_files_to_create  # update status lists
-                if num_of_files_to_create > 0:
-                    for i in range(num_of_files_to_create):
-                        f = open("ban_namelist_split{num}.txt".format(num=i), "w")
-                        split_banlists.append(f)
-                    for idx, name in enumerate(difference_to_ban):
-                        split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
-                    for file in split_banlists:
-                        file.close()
-
-    def split_unbanfiles(self, channel):
-        with open("namelist.txt", "r") as namelist:
-            # File creation
-            if not os.path.isdir("banned_lists"):  # create folder if nescessary
-                os.mkdir("banned_lists")
-            if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
-                with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
-                    pass
-            self.delete_split_namelists()
-
-            # Calculating names to unban
-            with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
-                _nameset = set(namelist.readlines())
-                _banned_set = set(banned_names.readlines())
-                print("Creating difference for {streamer}".format(streamer=channel))
-                start = time.time()
-                difference_to_unban = sorted(_banned_set.difference(_nameset))
-                end = time.time()
-                print("Creating difference took {:.4f}s".format(end - start))
-
-                if difference_to_unban:
-                    # preparing the unbanlist files
-                    split_unbanlists = []
-                    num_of_files_to_create = max(min(len(difference_to_unban) // self.names_per_file, self.num_windows), 1)
+                    # preparing the banlistlist files
+                    split_banlists = []
+                    num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
                     self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
                     self.counter = [0] * num_of_files_to_create  # update status lists
                     if num_of_files_to_create > 0:
                         for i in range(num_of_files_to_create):
-                            f = open("unban_namelist_split{num}.txt".format(num=i), "w")
-                            split_unbanlists.append(f)
-                        for idx, name in enumerate(difference_to_unban):
-                            split_unbanlists[idx % num_of_files_to_create].write(name)
-                        for file in split_unbanlists:
+                            f = open("ban_namelist_split{num}.txt".format(num=i), "w")
+                            split_banlists.append(f)
+                        for idx, name in enumerate(difference_to_ban):
+                            split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
+                        for file in split_banlists:
                             file.close()
+
+    def split_unbanfiles(self, channel):
+        if self.config["Unban"] or self.config["Unblock"]:
+            with open("namelist.txt", "r") as namelist:
+                # File creation
+                if not os.path.isdir("banned_lists"):  # create folder if nescessary
+                    os.mkdir("banned_lists")
+                if not os.path.isfile("banned_lists/{streamer}.txt".format(streamer=channel)):  # create streamer specific file if non existant
+                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "x"):
+                        pass
+                self.delete_split_namelists()
+
+                # Calculating names to unban
+                with open("banned_lists/{streamer}.txt".format(streamer=channel), "r") as banned_names:
+                    _nameset = set(namelist.readlines())
+                    _banned_set = set(banned_names.readlines())
+                    print("Creating difference for {streamer}".format(streamer=channel))
+                    start = time.time()
+                    difference_to_unban = sorted(_banned_set.difference(_nameset))
+                    end = time.time()
+                    print("Creating difference took {:.4f}s".format(end - start))
+
+                    if difference_to_unban:
+                        # preparing the unbanlist files
+                        split_unbanlists = []
+                        num_of_files_to_create = max(min(len(difference_to_unban) // self.names_per_file, self.num_windows), 1)
+                        self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
+                        self.counter = [0] * num_of_files_to_create  # update status lists
+                        if num_of_files_to_create > 0:
+                            for i in range(num_of_files_to_create):
+                                f = open("unban_namelist_split{num}.txt".format(num=i), "w")
+                                split_unbanlists.append(f)
+                            for idx, name in enumerate(difference_to_unban):
+                                split_unbanlists[idx % num_of_files_to_create].write(name)
+                            for file in split_unbanlists:
+                                file.close()
 
     def browser(self, userlist, index, channel, command_list):
         def chunks(lst, n):
