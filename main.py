@@ -266,7 +266,9 @@ class Bantool:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                                         if command == "/ban":
                                             pc.copy(str(f"{command} {_name} Banned by Bantool, if you think this was a mistake, please contact a moderator"))
-                                            chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)                                        else:
+                                            chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
+                                        else:
+                                            chat_field.send_keys(f"{command} {_name}", Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
