@@ -7,7 +7,7 @@ import time
 import _thread
 import glob
 import colorama
-import pyperclip
+import pyperclip as pc
 from typing import List
 
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
