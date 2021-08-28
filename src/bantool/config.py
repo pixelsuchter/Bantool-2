@@ -4,6 +4,9 @@ import os.path
 import json
 from typing import List, NamedTuple, TypedDict
 import stringcase as sc
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigDict(TypedDict):
@@ -51,12 +54,13 @@ default_dict: ConfigDict = dict(
 
 def create_default_config(config_path: str) -> str:
     with open(config_path, "w") as f:
-        json.dump(default_dict, f)
+        json.dump(default_dict, f, sort_keys=True, indent=4)
     return config_path
 
 
 def load_config_to_dict(config_path: str) -> ConfigDict:
     if not os.path.exists(config_path):
+        logging.error("Creating default config file: %s", config_path)
         config_path = create_default_config(config_path)
 
     with open(config_path) as cfg:
