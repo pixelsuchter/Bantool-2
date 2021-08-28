@@ -15,9 +15,9 @@ python = "^3.8"
 tqdm = "^4.62.1"
 twitchAPI = "^2.3.2"
 selenium = "^3.141.0"
-colorama = "^0.4.4"
 stringcase = "^1.2.0"
 click = "^8.0.1"
+rich = "^10.8.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"

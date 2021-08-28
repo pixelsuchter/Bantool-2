@@ -8,7 +8,7 @@ import sys
 import time
 from typing import List
 
-import colorama
+from rich import print
 
 from selenium.common.exceptions import (
     NoSuchElementException,
@@ -297,15 +297,12 @@ class Bantool:
                     _thread.start_new_thread(
                         self.browser, (namelist, idx, channel, commands)
                     )
-                    # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
                     pass
             else:
                 cleanup_banfiles(channel)
                 return  # Nothing to do
-            logger.info("\n")
+            print("\n")
             # Wait until broswers report back done
-            colorama.init(autoreset=True)
-            fore = colorama.Fore
             i = 0
             while (
                 "Not Started" in self.browser_status
@@ -313,41 +310,41 @@ class Bantool:
             ):
                 if i == 0:
                     print(
-                        f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end=""
+                        "\rWaiting for Browsers []", end=""
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 1 or i == 9:
                     print(
-                        f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]",
+                        "\rWaiting for Browsers [[red]•[/red]   ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 2 or i == 8:
                     print(
-                        f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]",
+                        "\rWaiting for Browsers [  [green]•[/green]   ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 3 or i == 7:
                     print(
-                        f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]",
+                        "\rWaiting for Browsers [   [cyan]•[/cyan]  ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 4 or i == 6:
                     print(
-                        f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]",
+                        "\rWaiting for Browsers [    [blue]•[/blue] ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 5:
                     print(
-                        f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]",
+                        "\rWaiting for Browsers [     [magenta]•[/magenta]]",
                         end="",
                     )
                     i += 1
@@ -395,13 +392,10 @@ class Bantool:
                     _thread.start_new_thread(
                         self.browser, (namelist, idx, channel, ["/unban"])
                     )
-                    # time.sleep(2)  # No longer needed due to threads blocking simultaneous profile access
             else:  # Nothing to do
                 cleanup_unban_files(channel)
                 return
             print("\n")
-            colorama.init(autoreset=True)
-            fore = colorama.Fore
             i = 0
             while (
                 "Not Started" in self.browser_status
@@ -409,41 +403,41 @@ class Bantool:
             ):
                 if i == 0:
                     print(
-                        f"\rWaiting for Browsers [{fore.RED}•{fore.RESET}     ]", end=""
+                        "\rWaiting for Browsers []", end=""
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 1 or i == 9:
                     print(
-                        f"\rWaiting for Browsers [ {fore.YELLOW}•{fore.RESET}    ]",
+                        "\rWaiting for Browsers [[red]•[/red]   ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 2 or i == 8:
                     print(
-                        f"\rWaiting for Browsers [  {fore.GREEN}•{fore.RESET}   ]",
+                        "\rWaiting for Browsers [  [green]•[/green]   ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 3 or i == 7:
                     print(
-                        f"\rWaiting for Browsers [   {fore.CYAN}•{fore.RESET}  ]",
+                        "\rWaiting for Browsers [   [cyan]•[/cyan]  ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 4 or i == 6:
                     print(
-                        f"\rWaiting for Browsers [    {fore.BLUE}•{fore.RESET} ]",
+                        "\rWaiting for Browsers [    [blue]•[/blue] ]",
                         end="",
                     )
                     i += 1
                     time.sleep(0.3)
                 elif i == 5:
                     print(
-                        f"\rWaiting for Browsers [     {fore.MAGENTA}•{fore.RESET}]",
+                        "\rWaiting for Browsers [     [magenta]•[/magenta]]",
                         end="",
                     )
                     i += 1
@@ -465,8 +459,6 @@ class Bantool:
                 old_sum = new_sum
                 new_sum = sum(self.counter)
                 progressbar.update(new_sum - old_sum)
-                # print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
-                #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
                 time.sleep(0.01)
             progressbar.close()
             logger.info("Done")
