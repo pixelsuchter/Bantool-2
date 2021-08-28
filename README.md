@@ -49,6 +49,60 @@ A tool to filter out users from a namelist if they don't have a valid twitch acc
 https://www.paypal.com/donate?hosted_button_id=Y6MFY2BENXA2C
 </div>
 
+# Installation
+
+
+## MacOS/Linux
+
+Ensure Python3.8 or 3.9 is installed:
+
+```shell
+python3.8 --version
+```
+
+Clone this repository and create a virtualenv
+
+```shell
+git clone https://github.com/pixelsuchter/Bantool-2.git
+cd Bantool-2/
+python3.8 -m virtualenv venv
+source venv/bin/activate
+```
+
+Install the package
+
+```shell
+pip install .
+bantool --version
+```
+
+## Windows
+
+Install Python3.8 or 3.9 from the Microsoft Store.
+
+Open a command prompt window.
+
+- Press Start, type `cmd` and hit Enter
+or
+- Hit Windows+R, type `cmd` and hit Enter
+
+Clone this repository and create a virtualenv
+
+```shell
+git clone https://github.com/pixelsuchter/Bantool-2.git
+cd Bantool-2/
+python3.8 -m pip install virtualenv
+python3.8 -m virtualenv venv
+.\\venv\\Scripts\\activate
+```
+
+Install the package
+```shell
+pip install .
+```
+
+A `bantool.exe` script will have been created under `.\venv\Scripts`, double-click to generate an empty config file, or copy an existing config file.
+
 ## Developer Information
 
 Clone this repo and create a python3.8 virtual environment.
