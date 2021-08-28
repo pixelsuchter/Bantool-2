@@ -73,14 +73,15 @@ class Bantool:
             # Repackage assertion error
             raise ValueError(str(e)) from None
 
-    def check_config(self):
-        if not os.path.isfile(self.namelist):
-            logger.error("Namelist not found: %s.", self.namelist)
-
-        assert self.channels is not [""], "Channel(s) required"
-        assert self.account_name, "Account name required"
-        assert self.num_windows, "Number of windows required"
-        assert self.profile, "Firefox profile required"
+    def check_config(self) -> None:
+        try:
+            assert os.path.isfile(self.namelist), "Namelist not found."
+            assert self.channels is not [""], "Channel(s) required"
+            assert self.account_name, "Account name required"
+            assert self.num_windows, "Number of windows required"
+            assert self.profile, "Firefox profile required"
+        except AssertionError as e:
+            raise ValueError(str(e)) from None
 
     def delete_split_namelists(self):
         namelist_files = glob.glob("ban_namelist_split*.txt")
