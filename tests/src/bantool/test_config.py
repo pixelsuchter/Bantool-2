@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import unittest
-import json
 import tempfile
 from textwrap import dedent
 
 from bantool import config
-import bantool
 
 
 class ThisTestCase(unittest.TestCase):
