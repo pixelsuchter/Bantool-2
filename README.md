@@ -69,7 +69,7 @@ python3.8 -m virtualenv venv
 source venv/bin/activate
 ```
 
-Install the package
+Install the package and verify it was added to the virtualenv path:
 
 ```shell
 pip install .
@@ -102,15 +102,3 @@ pip install .
 ```
 
 A `bantool.exe` script will have been created under `.\venv\Scripts`, double-click to generate an empty config file, or copy an existing config file.
-
-## Developer Information
-
-Clone this repo and create a python3.8 virtual environment.
-
-Install `pip-tools` and use the `pip-sync` utility to install dependencies:
-
-```shell
-pip install pip-tools
-pip-sync dev-requirements.txt requirements.txt
-python setup.py develop
-```
