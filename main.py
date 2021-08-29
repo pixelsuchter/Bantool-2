@@ -49,6 +49,26 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
     from tqdm import tqdm
 
+script = \
+    f'''
+function Sleep(milliseconds) {{
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}}
+
+async function main(){{
+    var names = ["hi", "there"];
+    textbox = document.querySelector("{chat_css_selector}");
+    chat_button = document.querySelector("div.brpYgf:nth-child(4) > button:nth-child(1)");
+    for(let name of names){{
+        console.info(textbox);
+        textbox.chat_input = name; //todo doesn't work
+        await Sleep(1000);  // test delay
+        chat_button.click();
+    }}
+}}
+main();
+'''
+
 
 class Bantool:
     def __init__(self):
@@ -273,11 +293,13 @@ class Bantool:
                                         if command == "/ban":
                                             with _lock:
                                                 pc.copy(str(f"{command} {_name} Banned by Bantool, if you think this was a mistake, please contact a moderator"))
-                                                chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
+                                                chat_field.send_keys(Keys.CONTROL, 'v')
+                                            chat_field.send_keys(Keys.ENTER)
                                         else:
                                             with _lock:
                                                 pc.copy(str(f"{command} {_name}"))
-                                                chat_field.send_keys(Keys.CONTROL, 'v', Keys.ENTER)
+                                                chat_field.send_keys(Keys.CONTROL, 'v')
+                                            chat_field.send_keys(Keys.ENTER)
                                     banned_names.write(f"{_name}\n")
                                     self.counter[index] += 1
                                 except (ElementNotInteractableException, ElementClickInterceptedException):
@@ -287,6 +309,9 @@ class Bantool:
                                             rules_button.click()
                                     except (NoSuchElementException, TimeoutException):
                                         pass
+                                # print(script)
+                                # driver.execute_script(script)
+                                # time.sleep(1000)
                 with self.thread_lock:
                     with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist, open("banned_part{index}.txt".format(index=index), "r") as banned_names:
                         _names = banned_names.readlines()
