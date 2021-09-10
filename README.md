@@ -8,6 +8,8 @@
 <li>You can now set multiple channels to run on</li>
 </ul>
 
+<h3>DO NOT USE THE CLIPBOARD WHILE THIS TOOL RUNS (no copy/paste)</h3>
+
 Namelist at: https://github.com/LinoYeen/Namelists
 
 <h3>How to use:</h3>
