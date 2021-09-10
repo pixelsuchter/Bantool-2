@@ -7,6 +7,8 @@ New:
   - Keeps track of banned users per channel
   - You can now set multiple channels to run on
 
+DO NOT USE THE CLIPBOARD WHILE THIS TOOL RUNS (no copy/paste)
+
 Namelist at: https://github.com/LinoYeen/Namelists
 
 
