@@ -8,6 +8,8 @@
 <li>You can now set multiple channels to run on</li>
 </ul>
 
+Namelist at: https://github.com/LinoYeen/Namelists
+
 <h3>How to use:</h3>
 <ol>
 <li>Unzip FirefoxPortable.7z</li>
