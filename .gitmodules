@@ -1,0 +1,4 @@
+[submodule "Namelists"]
+	path = Namelists
+	url = https://github.com/LinoYeen/Namelists.git
+	branch = main
