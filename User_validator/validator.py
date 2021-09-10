@@ -44,13 +44,15 @@ with open("inputlist_names.txt", "r") as names:
 name_set = set()
 for name_line in name_lines:
     name = name_line.strip().lower()
-    name_set.add(name)
+    if name:
+        name_set.add(name)
 name_list = list(sorted(name_set))
 
 user_id_set = set()
 for user_id_line in user_id_lines:
     user_id = user_id_line.strip()
-    user_id_set.add(user_id)
+    if user_id:
+        user_id_set.add(user_id)
 user_id_list = list(sorted(user_id_set))
 
 
@@ -61,21 +63,36 @@ chunked_user_id_lists = [*chunks(user_id_list, 100)]
 with open("namelist_cleaned.txt", "w") as name_file, open("user_id_list_cleaned.txt", "w") as id_file:
     progressbar = tqdm.tqdm(chunked_namelists, file=sys.stdout, ascii=True, desc="User names")
     for chunk in progressbar:
-        user_infos = twitch.get_users(logins=chunk).get("data")
-        for user_info in user_infos:
-            name_file.write(f"{user_info.get('login')}\n")
-            id_file.write(f"{user_info.get('id')}\n")
-            name_file.flush()
-            id_file.flush()
+        try:
+            user_infos = twitch.get_users(logins=chunk).get("data")
+            for user_info in user_infos:
+                if user_info.get("broadcaster_type") not in ("affiliate", "partner", "staff"):
+                    name_file.write(f"{user_info.get('login')}\n")
+                    id_file.write(f"{user_info.get('id')}\n")
+                    name_file.flush()
+                    id_file.flush()
+        except:
+            for _name in chunk:
+                try:
+                    user_infos = twitch.get_users(logins=[_name]).get("data")
+                    for user_info in user_infos:
+                        if user_info.get("broadcaster_type") not in ("affiliate", "partner", "staff"):
+                            name_file.write(f"{user_info.get('login')}\n")
+                            id_file.write(f"{user_info.get('id')}\n")
+                            name_file.flush()
+                            id_file.flush()
+                except:
+                    print(_name)
 
     progressbar = tqdm.tqdm(chunked_user_id_lists, file=sys.stdout, ascii=True, desc="User id's")
     for chunk in progressbar:
         user_infos = twitch.get_users(user_ids=chunk).get("data")
         for user_info in user_infos:
-            name_file.write(f"{user_info.get('login')}\n")
-            id_file.write(f"{user_info.get('id')}\n")
-            name_file.flush()
-            id_file.flush()
+            if user_info.get("broadcaster_type") not in ("affiliate", "partner", "staff"):
+                name_file.write(f"{user_info.get('login')}\n")
+                id_file.write(f"{user_info.get('id')}\n")
+                name_file.flush()
+                id_file.flush()
 
 with open("namelist_cleaned.txt", "r") as output_file:
     num_output = len(output_file.readlines())
