@@ -85,7 +85,7 @@ class Bantool:
         self.do_block = False
         self.do_unban = False
         self.do_unblock = False
-        self.greeting_emote = ""
+        #self.greeting_emote = ""
         self.chunk_size = 1000
         self.thread_lock = _thread.allocate_lock()
         self.browser_lock = _thread.allocate_lock()
@@ -102,7 +102,7 @@ class Bantool:
                 assert type(self.config["Ban"]) == bool
                 assert type(self.config["Unban"]) == bool
                 assert type(self.config["Unblock"]) == bool
-                assert type(self.config["Greeting Emote"]) == str
+                #assert type(self.config["Greeting Emote"]) == str
                 assert type(self.config["Chunk size"]) == int
             self.channels = self.config["twitch_channels"]
             self.account_name = self.config["account_name"]
@@ -111,7 +111,7 @@ class Bantool:
             self.do_block = self.config["Block"]
             self.do_unban = self.config["Unban"]
             self.do_unblock = self.config["Unblock"]
-            self.greeting_emote = self.config["Greeting Emote"]
+            #self.greeting_emote = self.config["Greeting Emote"]
             self.chunk_size = self.config["Chunk size"]
         except (OSError, json.JSONDecodeError, AssertionError, KeyError) as e:
             print("Config file does not exist or corrupt, creating default config\n")
@@ -281,7 +281,7 @@ class Bantool:
                     if chat_field.is_displayed():
                         chat_field.click()
                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                        chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
+                        #chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
                         self.browser_status[index] = "Ready"
                         while not self.all_browsers_ready:
                             time.sleep(0.1)
@@ -292,7 +292,7 @@ class Bantool:
                                         chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
                                         if command == "/ban":
                                             with _lock:
-                                                pc.copy(str(f"{command} {_name} Banned by Bantool, if you think this was a mistake, please contact a moderator"))
+                                                pc.copy(str(f"{command} {_name}"))
                                                 chat_field.send_keys(Keys.CONTROL, 'v')
                                             chat_field.send_keys(Keys.ENTER)
                                         else:
