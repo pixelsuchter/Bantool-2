@@ -7,6 +7,8 @@ New:
   - Keeps track of banned users per channel
   - You can now set multiple channels to run on
 
+Namelist at: https://github.com/LinoYeen/Namelists
+
 
 How to use:
   1)  Unzip FirefoxPortable.7z
