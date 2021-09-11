@@ -12,6 +12,18 @@
 
 Namelist at: https://github.com/LinoYeen/Namelists
 
+# Installation
+
+This package should be installed using Python >= 3.8. Check your current Python version using `python3 --version` in a terminal window.
+
+If you have the correct Python version, navigate to the `Bantool-2` directory and run:
+
+```shell
+pip install .
+```
+
+This will install the `bantool` terminal application.
+
 <h3>How to use:</h3>
 <ol>
 <li>Unzip FirefoxPortable.7z</li>
@@ -23,7 +35,7 @@ Namelist at: https://github.com/LinoYeen/Namelists
 <li>close and reopen firefox
 <li>log into Twitch
 <li>close out of firefox again
-<li>click main.exe or main.py (python 3.8 or newer needs to be installed for the .py file)
+<li>~click main.exe or main.py (python 3.8 or newer needs to be installed for the .py file)~
 <li>It will generate the necessary files and will ask you to press enter to close it
 <li><h4>edit the config file:</h4>
 <ul>
