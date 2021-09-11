@@ -40,3 +40,42 @@ def cleanup_banfiles(streamer: str) -> None:
 
 def cleanup_unban_files(streamer: str):
     cleanup_files(streamer, "unbanned")
+
+def split_files(channel: str, outprefix: str):
+    # File creation
+    lists_dir = pathlib.Path("banned_lists/")
+    streamer_banned_file = lists_dir / pathlib.Path(f"{channel}.txt")
+    if not lists_dir.exists():
+        lists_dir.os.mkdir()
+    if not streamer_banned_file.exists():
+        streamer_banned_file.touch()
+
+    # Cleanup Old Files
+    self.delete_split_namelists()
+    with open(self.namelist, "r") as namelist, open(
+        streamer_banned_file, "r"
+    ) as banned_names:
+        _nameset = set([line.strip() for line in namelist])
+        _banned_set = set([line.strip() for line in banned_names])
+    logger.info("Creating difference for %s", channel)
+    difference_to_ban = sorted(_nameset.difference(_banned_set))
+
+    # preparing the banlistlist files
+    split_banlists = []
+    num_of_files_to_create = max(
+        min(len(difference_to_ban) // self.names_per_file, self.num_windows),
+        1,
+    )
+    # Split banlist based on available threads
+    self.browser_status = [
+        "Not Started"
+    ] * num_of_files_to_create  # update status lists
+    self.counter = [0] * num_of_files_to_create  # update status lists
+    logger.info("Creating %d files", num_of_files_to_create)
+    for i in range(num_of_files_to_create):
+        f = open(f"{outprefix}_namelist_split{i}.txt", "w")
+        split_banlists.append(f)
+    for idx, name in enumerate(difference_to_ban):
+        split_banlists[idx % num_of_files_to_create].write(f"{name}\n")
+    for file in split_banlists:
+        file.close()
