@@ -47,9 +47,28 @@ class Browser:
     channel: str
     command_list: list
 
-    def __init__(self, profile_name: str):
+    def __init__(self, profile_name: str, channel: str):
         self.profile_name = profile_name
         self.profile = self.setup_profile()
+        self.channel = channel
+
+        self.status = self.set_status("Starting")
+    
+    def __enter__(self) -> 'Browser':
+
+        self.driver = webdriver.Firefox(
+            options=Options(),
+            executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe",
+            firefox_profile=self.profile,
+            firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe",
+        )
+        self.wait = WebDriverWait(self.driver, 120)
+        self.wait_rules = WebDriverWait(self.driver, 5)
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.driver.close()
+
 
     def setup_profile(self):
         profile = webdriver.FirefoxProfile(self.profile_name)
@@ -67,101 +86,114 @@ class Browser:
         for i in range(0, len(lst), n):
             end = i + n
             yield lst[i:end]
+    
+    def get_status(self) -> str:
+        return self.status
+    
+    def set_status(self, status: str) -> str:
+        self.status = status
+        return self.status
+    
+    def ready(self) -> str:
+        """
+        Accepts:
+            index (int): Id of instance, should be unique
+            command_list (List[str]): 
+        """
+        self.driver.get(f"https://www.twitch.tv/popout/{self.channel}/chat")
+        chat_field = self.wait.until(
+            presence_of_element_located((By.CSS_SELECTOR, CHAT_CSS_SELECTOR))
+        )
+        self.wait.until(
+            presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status"))
+        )
+        time.sleep(1)
+        if chat_field.is_displayed():
+            chat_field.click()
+        try:
+            rules_button = self.wait_rules.until(
+                presence_of_element_located(
+                    (By.CSS_SELECTOR, RULES_WINDOW_ACCEPT_CSS_SELECTOR)
+                )
+            )
+            if rules_button.is_displayed():
+                rules_button.click()
+        except (NoSuchElementException, TimeoutException):
+            pass
+        if chat_field.is_displayed():
+            chat_field.click()
+            chat_field = self.wait.until(
+                presence_of_element_located(
+                    (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
+                )
+            )
+            chat_field.send_keys(
+                f"{self.greeting_emote} {self.index} {self.greeting_emote}",
+                Keys.ENTER,
+            )
+            return self.set_status("Ready")
+        
+    def send_command(self, command: str, name: str):
+        chat_field = self.wait.until(
+            presence_of_element_located(
+                (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
+            )
+        )
+        if command == "/ban":
+            chat_field.send_keys(
+                f"{command} {name} Banned by bantool, if you think this was a mistake, please contact a moderator",
+                Keys.ENTER,
+            )
+        else:
+            chat_field.send_keys(
+                f"{command} {name}", Keys.ENTER
+            )
 
-    def run(self, index: int, command_list: list):
-        self.browser_status[index] = "Starting"
+    def run(self, index: int, command_list: list, userlist: str):
         try:
             with open(userlist, "r") as _namelist:
                 _namelist_stripped = sorted(map(str.strip, _namelist.readlines()))
             chunked_lists = self.yield_chunks(_namelist_stripped, self.chunk_size)
-            with webdriver.Firefox(
-                options=options,
-                executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe",
-                firefox_profile=profile,
-                firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe",
-            ) as driver:
-                self.thread_lock.release()
-                driver.set_window_size(1000, 1000)
-                wait = WebDriverWait(driver, 120)
-                wait_rules = WebDriverWait(driver, 5)
-                driver.get(
-                    "https://www.twitch.tv/popout/{channel}/chat".format(
-                        channel=channel
-                    )
-                )
-                chat_field = wait.until(
-                    presence_of_element_located((By.CSS_SELECTOR, CHAT_CSS_SELECTOR))
-                )
-                chat_welcome_message = wait.until(
-                    presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status"))
-                )
-                time.sleep(1)
-                if chat_field.is_displayed():
-                    chat_field.click()
-                try:  # remove rules window
-                    rules_button = wait_rules.until(
-                        presence_of_element_located(
-                            (By.CSS_SELECTOR, RULES_WINDOW_ACCEPT_CSS_SELECTOR)
-                        )
-                    )
-                    if rules_button.is_displayed():
-                        rules_button.click()
-                except (NoSuchElementException, TimeoutException):
-                    pass
-                if chat_field.is_displayed():
-                    chat_field.click()
-                    chat_field = wait.until(
-                        presence_of_element_located(
-                            (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
-                        )
-                    )
-                    chat_field.send_keys(
-                        f"{self.greeting_emote} {index} {self.greeting_emote}",
-                        Keys.ENTER,
-                    )
-                    self.browser_status[index] = "Ready"
-                    while not self.all_browsers_ready:
-                        time.sleep(0.1)
-                    with open(
-                        "banned_part{index}.txt".format(index=index), "w"
-                    ) as banned_names:
-                        for chunk in chunked_lists:
-                            for _name in chunk:
-                                try:
-                                    for command in command_list:
-                                        chat_field = wait.until(
-                                            presence_of_element_located(
-                                                (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
-                                            )
-                                        )
-                                        if command == "/ban":
-                                            chat_field.send_keys(
-                                                f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator",
-                                                Keys.ENTER,
-                                            )
-                                        else:
-                                            chat_field.send_keys(
-                                                f"{command} {_name}", Keys.ENTER
-                                            )
-                                    banned_names.write(f"{_name}\n")
-                                    self.counter[index] += 1
-                                except (
-                                    ElementNotInteractableException,
-                                    ElementClickInterceptedException,
-                                ):
-                                    try:  # remove rules window again, if nescessary
-                                        rules_button = wait_rules.until(
-                                            presence_of_element_located(
-                                                (
-                                                    By.CSS_SELECTOR,
-                                                    RULES_WINDOW_ACCEPT_CSS_SELECTOR,
-                                                )
-                                            )
-                                        )
-                                        if rules_button.is_displayed():
-                                            rules_button.click()
-                                    except (NoSuchElementException, TimeoutException):
-                                        pass
+        with open(
+            "banned_part{index}.txt".format(index=index), "w"
+        ) as banned_names:
+            for chunk in chunked_lists:
+                for _name in chunk:
+                    try:
+                        for command in command_list:
+                            chat_field = self.wait.until(
+                                presence_of_element_located(
+                                    (By.CSS_SELECTOR, CHAT_CSS_SELECTOR)
+                                )
+                            )
+                            if command == "/ban":
+                                chat_field.send_keys(
+                                    f"{command} {_name} Banned by bantool, if you think this was a mistake, please contact a moderator",
+                                    Keys.ENTER,
+                                )
+                            else:
+                                chat_field.send_keys(
+                                    f"{command} {_name}", Keys.ENTER
+                                )
+                        banned_names.write(f"{_name}\n")
+                        self.counter[index] += 1
+                    except (
+                        ElementNotInteractableException,
+                        ElementClickInterceptedException,
+                    ):
+                        try:  # remove rules window again, if nescessary
+                            rules_button = wait_rules.until(
+                                presence_of_element_located(
+                                    (
+                                        By.CSS_SELECTOR,
+                                        RULES_WINDOW_ACCEPT_CSS_SELECTOR,
+                                    )
+                                )
+                            )
+                            if rules_button.is_displayed():
+                                rules_button.click()
+                        except (NoSuchElementException, TimeoutException):
+                            pass
                 with self.thread_lock:
                     with open(
                         "banned_lists/{streamer}.txt".format(streamer=channel), "a"
