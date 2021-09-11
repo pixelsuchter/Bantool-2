@@ -188,7 +188,7 @@ class Bantool:
 
                     # preparing the banlistlist files
                     split_banlists = []
-                    num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows*2 if self.do_block else self.num_windows), 1)
+                    num_of_files_to_create = max(min(len(difference_to_ban) // self.names_per_file, self.num_windows), 1)
                     self.browser_status = ["Not Started"] * num_of_files_to_create  # update status lists
                     self.counter = [0] * num_of_files_to_create  # update status lists
                     if num_of_files_to_create > 0:
@@ -500,10 +500,10 @@ class Bantool:
         self.check_files()
         self.sort_file_and_dedupe("namelist.txt")
         for chnl in self.channels:
-            self.split_unbanfiles(chnl)
-            self.start_browsers_unban(chnl)
             self.split_banfiles(chnl)
             self.start_browsers_ban(chnl)
+            self.split_unbanfiles(chnl)
+            self.start_browsers_unban(chnl)
             self.delete_split_namelists()
 
 
