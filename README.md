@@ -35,8 +35,7 @@ Namelist at: https://github.com/LinoYeen/Namelists
 <li>"Chunk size": The number of names after wich a browser window should restart and save its progress (to fix memory leaks)</li>
 </ul></li>
 
-<li>The amount of browser windows you should put set is dependent on your computer,<br>
-i suggest starting with 1 and working your way up (I can run 8 on a Ryzen 7 3700x)</li>
+<li>The amount of browser windows you should put set is dependent on your computer, but 4 is reccomended</li>
 <li>After filling the namelist and setting the config you can now open the main.exe or main.py again</li>
 </ol>
 
