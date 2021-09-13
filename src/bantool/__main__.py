@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import requests
 
 import colorama
 import pyperclip as pc
@@ -646,9 +647,47 @@ class Bantool:
             self.delete_split_namelists()
 
 
+def download_banlist():
+    """Download latest version of LinoYeen's banlist."""
+    r = requests.get("https://github.com/LinoYeen/Namelists/raw/main/namelist.txt")
+    with open('namelist.txt', 'wb') as fh:
+        fh.write(r.content)
+
+
+def init_config():
+    with open("config.json", "w") as f:
+        config = {
+            "twitch_channels": [""],
+            "account_name": "",
+            "Number_of_browser_windows": 1,
+            "Firefox_profile": "",
+            "Block": True,
+            "Ban": True,
+            "Unban": True,
+            "Unblock": True,
+            "Greeting Emote": "",
+            "Chunk size": 1000,
+        }
+        json.dump(config, f, sort_keys=True, indent=4)
+
+
+def init_files():
+    if not os.path.exists("namelist.txt"):
+        print("Downloading latest banlist...")
+        download_banlist()
+    if not os.path.exists("config.json"):
+        print("Creating default config file...")
+        init_config()
+
+
 def main():
-    tool = Bantool()
-    tool.run()
+    if "--init" in sys.argv:
+        print("Initalizing config files")
+        init_files()
+    else:
+        tool = Bantool()
+        tool.run()
+    sys.exit(0)
 
 
 if __name__ == "__main__":

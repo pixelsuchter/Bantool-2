@@ -1,4 +1,11 @@
+# Configs
+# Ignore config-related files
+namelist.txt
+banned/
+config.json
+
 # Byte-compiled / optimized / DLL files
+
 __pycache__/
 *.py[cod]
 *$py.class
