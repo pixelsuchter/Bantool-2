@@ -12,6 +12,20 @@
 
 Namelist at: https://github.com/LinoYeen/Namelists
 
+# Installation
+
+This package should be installed using Python >= 3.8. Check your current Python version using `python3 --version` in a terminal window.
+
+If you have the correct Python version, navigate to the `Bantool-2` directory and run:
+
+```shell
+pip install .
+```
+
+This will install the `bantool` terminal application.
+
+## Windows Installation
+
 <h3>How to use:</h3>
 <ol>
 <li>Unzip FirefoxPortable.7z</li>
@@ -23,8 +37,34 @@ Namelist at: https://github.com/LinoYeen/Namelists
 <li>close and reopen firefox
 <li>log into Twitch
 <li>close out of firefox again
-<li>click main.exe or main.py (python 3.8 or newer needs to be installed for the .py file)
-<li>It will generate the necessary files and will ask you to press enter to close it
+
+---
+Install Python3.8 from the Microsoft Store: <https://www.microsoft.com/en-us/p/python-38/9mssztt1n39l#activetab=pivot:overviewtab>
+
+Download the Bantool-2 code as a zip file, and unpack.
+
+Open a cmd.exe window: `Windows_Key + r` and type `cmd` and hit Enter.
+
+Ensure Python3.8 is installed: `python3.8 --version`
+
+Install the `virtualenv` Python package: `python3.8 -m pip install virtualenv`
+
+Change directories to the unzipped folder: `cd Downloads\\Bantool-2`, for example.
+
+Create a new virtualenv (an isolated Python installation): `python3.8 -m virtualenv venv`
+
+This will create a new directory named `venv` with various Python files inside.
+
+"Activate" the new virtualenv, and ensure it is being used:
+
+`.\\venv\\Scripts\\activate`
+
+The prompt should now show `(venv)` at the beginning.
+
+Run `pip install .` to install the `bantool` program.
+
+Run `bantool`, this should show a warning message about an invalid config.
+
 <li><h4>edit the config file:</h4>
 <ul>
 <li>"twitch_channels": ["NAME OF CHANNEL", "NAME OF SECOND CHANNEL", "NAME OF THIRD CHANNEL"],</li>
@@ -36,7 +76,7 @@ Namelist at: https://github.com/LinoYeen/Namelists
 </ul></li>
 
 <li>The amount of browser windows you should put set is dependent on your computer, but 4 is reccomended</li>
-<li>After filling the namelist and setting the config you can now open the main.exe or main.py again</li>
+<li>After filling the namelist and setting the config run `bantool`</li>
 </ol>
 
 

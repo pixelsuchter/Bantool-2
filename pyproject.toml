@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "bantool"
+version = "0.1.0"
+description = "Twitch bot ban tool"
+authors = ["Your Name <you@example.com>"]
+packages = [
+    { include = "bantool", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+tqdm = "^4.62.2"
+colorama = "^0.4.4"
+twitchAPI = "^2.3.2"
+pyperclip = "^1.8.2"
+selenium = "^3.141.0"
+requests = "^2.26.0"
+
+[tool.poetry.dev-dependencies]
+isort = "^5.9.3"
+flake8 = "^3.9.2"
+tox = "^3.24.3"
+pytest = "^6.2.5"
+pytest-cov = "^2.12.1"
+black = "^21.8b0"
+mypy = "^0.910"
+tox-poetry = "^0.4.1"
+
+[tool.poetry.scripts]
+bantool = 'bantool.__main__:main'
+
+[tool.black]
+line-length = 88
+skip-string-normalization = true
+target-version = ['py38']
+
+[tool.isort]
+profile = 'black'
+multi_line_output = 3
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
