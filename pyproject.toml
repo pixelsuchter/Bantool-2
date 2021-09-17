@@ -15,6 +15,7 @@ twitchAPI = "^2.3.2"
 pyperclip = "^1.8.2"
 selenium = "^3.141.0"
 requests = "^2.26.0"
+click = "^8.0.1"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"
