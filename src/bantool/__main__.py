@@ -19,13 +19,12 @@ def init_files():
 @click.command()
 @click.option("--init", "-i", "do_init", is_flag=True)
 @click.option("--config", default="config.json", type=str)
-@click.option("--banlist", default="namelist.txt", type=str)
-def main(do_init, config, banlist):
+def main(do_init, config):
     if do_init:
         init_files()
         sys.exit(0)
     try:
-        tool = Bantool(config=config, banlist=banlist)
+        tool = Bantool(config=config)
         tool.run()
     except Exception as e:
         logger.exception(e)
