@@ -18,7 +18,6 @@ class ConfigNT(NamedTuple):
     unblock: bool
     greeting_emote: str
     chunk_size: int
-    namelist: Optional[str]
 
 
 default_config = ConfigNT(
