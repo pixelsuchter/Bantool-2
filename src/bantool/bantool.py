@@ -59,11 +59,11 @@ class Bantool:
     greeting_emote: str
     chunk_size: int
     profile: str
+    namelist: str
     temp_namelist: str = "temp_namelist.txt"
 
-    def __init__(self, config: str, banlist: str):
+    def __init__(self, config: str):
         self.config: 'ConfigNT' = load_config(config)
-        self.banlist = banlist
         self.browser_status = ["Not Started"]
         self.all_browsers_ready = False
         self.counter = [0]
@@ -73,6 +73,7 @@ class Bantool:
         self.thread_lock = _thread.allocate_lock()
         self.browser_lock = _thread.allocate_lock()
 
+        self.banlist = self.config.namelist
         self.channels = self.config.twitch_channels
         self.account_name = self.config.account_name
         self.num_windows = self.config.number_of_browser_windows
