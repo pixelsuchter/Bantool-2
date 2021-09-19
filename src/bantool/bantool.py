@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import _thread
 import glob
-import json
 import os
 import sys
 import time
-import requests
+from typing import List, TYPE_CHECKING
 
+from bantool.config import load_config
 import colorama
 import pyperclip as pc
 from selenium import webdriver
@@ -19,6 +19,8 @@ from selenium.webdriver.support.expected_conditions import presence_of_element_l
 from selenium.webdriver.support.ui import WebDriverWait
 from tqdm import tqdm
 
+if TYPE_CHECKING:
+    from src.bantool.config import ConfigNT
 colorama.init()
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
 rules_window_accept_css_selector = ".bTWzyW"
@@ -44,75 +46,50 @@ main();
 
 
 class Bantool:
-    def __init__(self):
-        self.config = dict()
+    config: 'ConfigNT'
+    banlist: str
+    channels: List[str]
+    account_name: str
+    num_windows: int
+    firefox_profile: str
+    do_block: bool = False
+    do_ban: bool = False
+    do_unban: bool = False
+    do_unblock: bool = False
+    greeting_emote: str
+    chunk_size: int
+    profile: str
+    temp_namelist: str = "temp_namelist.txt"
+
+    def __init__(self, config: str, banlist: str):
+        self.config: 'ConfigNT' = load_config(config)
+        self.banlist = banlist
         self.browser_status = ["Not Started"]
         self.all_browsers_ready = False
         self.counter = [0]
-        self.channels = [""]
-        self.account_name = None
-        self.num_windows = 0
         self.names_per_file = 500
         self.headless_mode = False
-        self.do_ban = False
-        self.do_block = False
-        self.do_unban = False
-        self.do_unblock = False
-        # self.greeting_emote = ""
-        self.chunk_size = 1000
+
         self.thread_lock = _thread.allocate_lock()
         self.browser_lock = _thread.allocate_lock()
 
-    def load_config(self):
-        try:
-            with open("config.json", "r") as cfg:
-                self.config = json.load(cfg)
-                assert type(self.config["twitch_channels"]) == list
-                assert type(self.config["account_name"]) == str
-                assert type(self.config["Number_of_browser_windows"]) == int
-                assert type(self.config["Firefox_profile"]) == str
-                assert type(self.config["Block"]) == bool
-                assert type(self.config["Ban"]) == bool
-                assert type(self.config["Unban"]) == bool
-                assert type(self.config["Unblock"]) == bool
-                # assert type(self.config["Greeting Emote"]) == str
-                assert type(self.config["Chunk size"]) == int
-            self.channels = self.config["twitch_channels"]
-            self.account_name = self.config["account_name"]
-            self.num_windows = self.config["Number_of_browser_windows"]
-            self.do_ban = self.config["Ban"]
-            self.do_block = self.config["Block"]
-            self.do_unban = self.config["Unban"]
-            self.do_unblock = self.config["Unblock"]
-            # self.greeting_emote = self.config["Greeting Emote"]
-            self.chunk_size = self.config["Chunk size"]
-        except (OSError, json.JSONDecodeError, AssertionError, KeyError) as e:
-            print("Config file does not exist or corrupt, creating default config\n")
-            if os.path.isfile("config.json"):
-                if os.path.isfile("config.json.broken"):
-                    os.remove("config.json.broken")
-                os.rename("config.json", "config.json.broken")
-            with open("config.json", "w") as f:
-                config = {
-                    "twitch_channels": [""],
-                    "account_name": "",
-                    "Number_of_browser_windows": 1,
-                    "Firefox_profile": "",
-                    "Block": True,
-                    "Ban": True,
-                    "Unban": True,
-                    "Unblock": True,
-                    "Greeting Emote": "",
-                    "Chunk size": 1000,
-                }
-                json.dump(config, f, sort_keys=True, indent=4)
+        self.channels = self.config.twitch_channels
+        self.account_name = self.config.account_name
+        self.num_windows = self.config.number_of_browser_windows
+        self.profile = self.config.firefox_profile
+        self.do_ban = self.config.ban
+        self.do_block = self.config.block
+        self.do_unban = self.config.unban
+        self.do_unblock = self.config.unblock
+        self.greeting_emote = self.config.greeting_emote
+        self.chunk_size = self.config.chunk_size
 
     def check_files(self):
-        if not os.path.isfile("namelist.txt"):
+        if not os.path.isfile(self.temp_namelist):
             print(
                 "Namelist does not exist, creating file. Please insert names and restart"
             )
-            with open("namelist.txt", "x"):
+            with open(self.temp_namelist, "x"):
                 pass
             input("Press enter to exit")
             exit(0)
@@ -121,21 +98,22 @@ class Bantool:
             self.channels == [""]
             or not self.account_name
             or not self.num_windows
-            or not self.config["Firefox_profile"]
+            or not self.profile
         ):
             print("Config not set correctly")
             input("Press enter to exit")
             exit(0)
 
-    def sort_file_and_dedupe(self, filename: str):
-        with open(filename, "r") as file:
+    def sort_file_and_dedupe(self):
+        """Sort namelist to tempfile for running"""
+        with open(self.banlist, "r") as file:
             namelist = file.readlines()
             name_set = set()
             for name in namelist:
                 _name = name.strip().lower()
                 if _name:
                     name_set.add(_name)
-        with open(filename, "w") as file:
+        with open(self.temp_namelist, "w") as file:
             sorted_Names = sorted(name_set)
             for _name in sorted_Names:
                 file.write(f"{_name}\n")
@@ -156,7 +134,7 @@ class Bantool:
 
     def split_banfiles(self, channel):
         if self.config["Ban"] or self.config["Block"]:
-            with open("namelist.txt", "r") as namelist:
+            with open(self.temp_namelist, "r") as namelist:
                 # File creation
                 if not os.path.isdir("banned_lists"):  # create folder if nescessary
                     os.mkdir("banned_lists")
@@ -208,7 +186,7 @@ class Bantool:
 
     def split_unbanfiles(self, channel):
         if self.config["Unban"] or self.config["Unblock"]:
-            with open("namelist.txt", "r") as namelist:
+            with open(self.temp_namelist, "r") as namelist:
                 # File creation
                 if not os.path.isdir("banned_lists"):  # create folder if nescessary
                     os.mkdir("banned_lists")
@@ -279,7 +257,7 @@ class Bantool:
             chunked_lists = chunks(_namelist_stripped, self.chunk_size)
             for chunk in chunked_lists:
                 self.thread_lock.acquire()
-                profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
+                profile = webdriver.FirefoxProfile(self.profile)
                 profile.set_preference(
                     "security.insecure_field_warning.contextual.enabled", False
                 )
@@ -638,10 +616,13 @@ class Bantool:
     def run(self):
         self.load_config()
         self.check_files()
-        self.sort_file_and_dedupe("namelist.txt")
+        self.sort_file_and_dedupe()
         for chnl in self.channels:
             self.split_banfiles(chnl)
             self.start_browsers_ban(chnl)
             self.split_unbanfiles(chnl)
             self.start_browsers_unban(chnl)
             self.delete_split_namelists()
+
+
+# __END__
