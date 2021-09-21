@@ -8,7 +8,6 @@ import time
 import _thread
 import glob
 import colorama
-import pyperclip as pc
 from typing import List
 
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
@@ -50,23 +49,51 @@ except ImportError:
     from tqdm import tqdm
 
 script = \
-    f'''
+    '''
 function Sleep(milliseconds) {{
-  return new Promise(resolve => setTimeout(resolve, milliseconds));
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
 }}
 
-async function main(){{
-    var names = ["hi", "there"];
-    textbox = document.querySelector("{chat_css_selector}");
-    chat_button = document.querySelector("div.brpYgf:nth-child(4) > button:nth-child(1)");
-    for(let name of names){{
-        console.info(textbox);
-        textbox.chat_input = name; //todo doesn't work
-        await Sleep(1000);  // test delay
-        chat_button.click();
+function getSetter (element) {{
+    const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set
+    const prototype = Object.getPrototypeOf(element)
+    const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set
+
+    if (valueSetter && valueSetter !== prototypeValueSetter) {{
+        return prototypeValueSetter
+    }} else {{
+        return valueSetter
     }}
 }}
-main();
+
+async function test(names = ["1", "2"]) {{
+    const start = new Date()
+    
+    const textarea = document.querySelector('textarea')
+    const send = document.querySelector('button[data-a-target="chat-send-button"]')
+    const setNativeValue = getSetter(textarea)
+    const event = new Event('input', {{ bubbles: true }})
+
+    var command = "{command}"
+
+    var i = 0
+    const len = names.length
+    while(i < len){{
+        await Sleep(1)
+        setNativeValue.call(textarea, [command, names[i]].join(' '))
+        textarea.dispatchEvent(event)
+        send.click()
+        i++
+    }}
+
+    const end = new Date()
+
+    console.warn(`${{len}} names were ran through test.`)
+    console.warn(`This took ${{(end - start) / 1000}} seconds.`)
+    return(names)
+}}
+
+return(test({list}))
 '''
 
 
@@ -79,14 +106,13 @@ class Bantool:
         self.channels = [""]
         self.account_name = None
         self.num_windows = 0
-        self.names_per_file = 500
+        self.names_per_file = 1000
         self.headless_mode = False
         self.do_ban = False
         self.do_block = False
         self.do_unban = False
         self.do_unblock = False
-        #self.greeting_emote = ""
-        self.chunk_size = 1000
+        # self.greeting_emote = ""
         self.thread_lock = _thread.allocate_lock()
         self.browser_lock = _thread.allocate_lock()
 
@@ -102,8 +128,6 @@ class Bantool:
                 assert type(self.config["Ban"]) == bool
                 assert type(self.config["Unban"]) == bool
                 assert type(self.config["Unblock"]) == bool
-                #assert type(self.config["Greeting Emote"]) == str
-                assert type(self.config["Chunk size"]) == int
             self.channels = self.config["twitch_channels"]
             self.account_name = self.config["account_name"]
             self.num_windows = self.config["Number_of_browser_windows"]
@@ -111,8 +135,6 @@ class Bantool:
             self.do_block = self.config["Block"]
             self.do_unban = self.config["Unban"]
             self.do_unblock = self.config["Unblock"]
-            #self.greeting_emote = self.config["Greeting Emote"]
-            self.chunk_size = self.config["Chunk size"]
         except (OSError, json.JSONDecodeError, AssertionError, KeyError) as e:
             print("Config file does not exist or corrupt, creating default config\n")
             if os.path.isfile("config.json"):
@@ -250,76 +272,70 @@ class Bantool:
                     self.browser_status[index] = "Starting"
                     _namelist.seek(0)
                     _namelist_stripped = sorted(map(str.strip, _namelist.readlines()))
-            chunked_lists = chunks(_namelist_stripped, self.chunk_size)
-            for chunk in chunked_lists:
-                self.thread_lock.acquire()
-                profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
-                profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
-                profile.set_preference("security.enterprise_roots.enabled", True)
-                options = Options()
-                if index != 0 and self.headless_mode:
-                    options.add_argument('--headless')
-                with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
-                                       firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
-                    # print(driver.profile.profile_dir)
-                    self.thread_lock.release()
-                    driver.set_window_size(1000, 1000)
-                    wait = WebDriverWait(driver, 120)
-                    wait_rules = WebDriverWait(driver, 5)
-                    driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
-                    chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                    chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
-                    time.sleep(1)
-                    if chat_field.is_displayed():
-                        chat_field.click()
-                    try:  # remove rules window
-                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
-                        if rules_button.is_displayed():
-                            rules_button.click()
-                    except (NoSuchElementException, TimeoutException):
-                        pass
-                    if chat_field.is_displayed():
-                        chat_field.click()
-                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                        #chat_field.send_keys(f"{self.greeting_emote} {index} {self.greeting_emote}", Keys.ENTER)
-                        self.browser_status[index] = "Ready"
-                        while not self.all_browsers_ready:
-                            time.sleep(0.1)
-                        with open("banned_part{index}.txt".format(index=index), "w") as banned_names:
-                            for _name in chunk:
+            self.thread_lock.acquire()
+            profile = webdriver.FirefoxProfile(self.config["Firefox_profile"])
+            profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
+            profile.set_preference("security.enterprise_roots.enabled", True)
+            options = Options()
+            if index != 0 and self.headless_mode:
+                options.add_argument('--headless')
+            with webdriver.Firefox(options=options, executable_path="FirefoxPortable/App/Firefox64/geckodriver.exe", firefox_profile=profile,
+                                   firefox_binary="FirefoxPortable/App/Firefox64/firefox.exe") as driver:
+                # driver.minimize_window()
+                self.thread_lock.release()
+                # print(driver.profile.profile_dir)
+                driver.set_window_size(1000, 1000)
+                wait = WebDriverWait(driver, 120)
+                wait_rules = WebDriverWait(driver, 5)
+                driver.get("https://www.twitch.tv/popout/{channel}/chat".format(channel=channel))
+                chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
+                chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
+                time.sleep(1)
+                if chat_field.is_displayed():
+                    chat_field.click()
+                try:  # remove rules window
+                    rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
+                    if rules_button.is_displayed():
+                        rules_button.click()
+                except (NoSuchElementException, TimeoutException):
+                    pass
+                if chat_field.is_displayed():
+                    self.browser_status[index] = "Ready"
+                    while not self.all_browsers_ready:
+                        time.sleep(0.1)
+                    for command in command_list:
+                        _sub_lists = chunks(_namelist_stripped, 200)
+                        for _sub_list in _sub_lists:
+                            for i in range(1, 5):  # retry if the script times out
                                 try:
-                                    for command in command_list:
-                                        chat_field = wait.until(presence_of_element_located((By.CSS_SELECTOR, chat_css_selector)))
-                                        if command == "/ban":
-                                            with _lock:
-                                                pc.copy(str(f"{command} {_name}"))
-                                                chat_field.send_keys(Keys.CONTROL, 'v')
-                                            chat_field.send_keys(Keys.ENTER)
-                                        else:
-                                            with _lock:
-                                                pc.copy(str(f"{command} {_name}"))
-                                                chat_field.send_keys(Keys.CONTROL, 'v')
-                                            chat_field.send_keys(Keys.ENTER)
-                                    banned_names.write(f"{_name}\n")
-                                    self.counter[index] += 1
-                                except (ElementNotInteractableException, ElementClickInterceptedException):
-                                    try:  # remove rules window again, if nescessary
-                                        rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
-                                        if rules_button.is_displayed():
-                                            rules_button.click()
-                                    except (NoSuchElementException, TimeoutException):
-                                        pass
-                                # print(script)
-                                # driver.execute_script(script)
-                                # time.sleep(1000)
-                with self.thread_lock:
-                    with open("banned_lists/{streamer}.txt".format(streamer=channel), "a") as banlist, open("banned_part{index}.txt".format(index=index), "r") as banned_names:
-                        _names = banned_names.readlines()
-                        banlist.writelines(_names)
-        except LookupError:
+                                    driver.execute_script(script.format(command=command, list=_sub_list))
+                                    self.counter[index] += len(_sub_list)
+                                    with self.thread_lock:  # this is really bad....
+                                        if command in ("/ban", "/block"):
+                                            with open(f"banned_lists/{channel}.txt", "a") as banlist:
+                                                banlist.writelines("".join([f"{_name}\n" for _name in _sub_list]))
+                                        elif command in ("/unban", "/unblock"):
+                                            with open(f"banned_lists/{channel}.txt", "r") as banlist:
+                                                old_bannedlist = set(map(str.strip, banlist.readlines()))
+                                            unbanned_names = set(_sub_list)
+                                            new_banned_list = old_bannedlist.difference(unbanned_names)
+                                            new_banned_list = list(set([f"{name}\n" for name in new_banned_list]))
+                                            with open(f"banned_lists/{channel}.txt", "w") as banlist:
+                                                for name in sorted(new_banned_list):
+                                                    banlist.write(name)
+                                    break
+                                except Exception as e:
+                                    print(e)
+                                    print(f"failed attemt {i} out of 5")
+                            else:
+                                print("failed all 5 attemts, restart is reccomended")
+                time.sleep(1)
+        except LookupError as e:
+            print(e)
             print("couldn't start instance {}".format(index))
         finally:
             self.browser_status[index] = "Done"
+            time.sleep(1)  # used to prevent missing last name in short lists
 
     def start_browsers_ban(self, channel):
         self.all_browsers_ready = False
@@ -400,8 +416,6 @@ class Bantool:
                 old_sum = new_sum
                 new_sum = sum(self.counter)
                 progressbar.update(new_sum - old_sum)
-                # print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
-                #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
                 time.sleep(0.01)
             progressbar.close()
             print("Done")
@@ -488,8 +502,6 @@ class Bantool:
                 old_sum = new_sum
                 new_sum = sum(self.counter)
                 progressbar.update(new_sum - old_sum)
-                # print("Progress: {prog:.2%}  Elapsed time: {elapsed}".format(prog=sum(self.counter) / num_names,
-                #                                                              elapsed=str(datetime.timedelta(seconds=int(time.time() - start)))))
                 time.sleep(0.01)
             progressbar.close()
             print("Done")
@@ -500,10 +512,10 @@ class Bantool:
         self.check_files()
         self.sort_file_and_dedupe("namelist.txt")
         for chnl in self.channels:
-            self.split_banfiles(chnl)
-            self.start_browsers_ban(chnl)
             self.split_unbanfiles(chnl)
             self.start_browsers_unban(chnl)
+            self.split_banfiles(chnl)
+            self.start_browsers_ban(chnl)
             self.delete_split_namelists()
 
 

@@ -32,10 +32,9 @@ Namelist at: https://github.com/LinoYeen/Namelists
 <li>"Number_of_browser_windows": 1,</li>
 <li>"Firefox_profile": "NAME OF PROFILE FOLDER"</li>
 <li>"Greeting Emote": the emote it should put in chat once the browser is ready to work</li>
-<li>"Chunk size": The number of names after wich a browser window should restart and save its progress (to fix memory leaks)</li>
 </ul></li>
 
-<li>The amount of browser windows you should put set is dependent on your computer, but 4 is reccomended</li>
+<li>The amount of browser windows you should put set is dependent on your computer, but 1 per CPU core is reccomended</li>
 <li>After filling the namelist and setting the config you can now open the main.exe or main.py again</li>
 </ol>
 
