@@ -76,5 +76,4 @@ class Test_init_config(ThisTestCase):
         self.assertEqual(MOD.default_config._asdict(), file_obj)
 
 
-
 # __END__
