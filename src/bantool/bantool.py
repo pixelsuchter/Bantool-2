@@ -10,7 +10,12 @@ from bantool.config import load_config
 import colorama
 import pyperclip as pc
 from selenium import webdriver
-from selenium.common.exceptions import *
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    ElementNotInteractableException,
+    ElementClickInterceptedException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -247,7 +252,8 @@ class Bantool:
         def chunks(lst, n):
             """Yield successive n-sized chunks from lst."""
             for i in range(0, len(lst), n):
-                yield lst[i : i + n]
+                j = i + n
+                yield lst[i:j]
 
         try:
             with open(userlist, "r") as _namelist:
