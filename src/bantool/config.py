@@ -6,6 +6,7 @@ import os.path
 from typing import NamedTuple, List, Optional
 import snakecase as sc
 
+NAMELIST_URL = "https://github.com/LinoYeen/Namelists/raw/main/namelist.txt"
 
 class ConfigNT(NamedTuple):
     twitch_channels: List[str]
@@ -19,6 +20,8 @@ class ConfigNT(NamedTuple):
     greeting_emote: str
     chunk_size: int
     namelist: str
+
+# FIXME: Investigate using namelist for requests if url
 
 
 default_config = ConfigNT(
@@ -36,7 +39,7 @@ default_config = ConfigNT(
 )
 
 
-def download_banlist(banlist_dir: str = ".") -> str:
+def download_banlist(banlist_dir: str = ".", _url: str = NAMELIST_URL) -> str:
     """Downloads latest version of LinoYeen's banlist.
 
     Accepts:
@@ -44,9 +47,9 @@ def download_banlist(banlist_dir: str = ".") -> str:
     Returns:
         path of downloaded banlist
     """
-    r = requests.get("https://github.com/LinoYeen/Namelists/raw/main/namelist.txt")
+    r = requests.get(_url)
 
-    banlist_dir = os.path.abspath('banlist_dir')
+    banlist_dir = os.path.abspath(banlist_dir)
     if not os.path.isdir(banlist_dir):
         raise ValueError(f"{banlist_dir} is not a directory")
     banlist_path = os.path.join(banlist_dir, "namelist.txt")
