@@ -1,0 +1,13 @@
+{
+    " Twitch Channels ": [""],
+    "account Name": "",
+    "number_of_browser_windows": 1,
+    "Firefox Profile": "",
+    "block": true,
+    "ban": true,
+    "unban": true,
+    "unblock": true,
+    "greeting_emote": "",
+    "chunk_size": 1000,
+    "namelist": "namelist.txt"
+}
