@@ -4,7 +4,7 @@ import requests
 import json
 import os.path
 from typing import NamedTuple, List, Optional
-import snakecase as sc
+import stringcase as sc
 
 NAMELIST_URL = "https://github.com/LinoYeen/Namelists/raw/main/namelist.txt"
 
@@ -89,23 +89,24 @@ def load_config(config_path: str) -> ConfigNT:
         raise ValueError(f"Could not find {config_path}")
 
     try:
-        with open("config.json", "r") as cfg:
+        with open(config_path, "r") as cfg:
             config_dict: dict = json.load(cfg)
     except Exception as e:
         raise ValueError(e) from None
     # Normalize keys
 
-    for k in config_dict.keys():
+    new_config = {}
+    for k, v in config_dict.items():
         # All lower, underscore delimited
         k_norm = sc.snakecase(k.lower().strip())
         if k == k_norm:
             # "Correct" key
-            continue
+            new_config[k] = v
         else:
             # Replace with normalized key
-            config_dict[k_norm] = config_dict.pop(k)
+            new_config[k_norm] = v
 
-    config = ConfigNT(**{k: v for k, v in config_dict.items() if k in ConfigNT._fields})
+    config = ConfigNT(**{k: v for k, v in new_config.items() if k in ConfigNT._fields})
     """
     assert type(self.config["twitch_channels"]) == list
     assert type(self.config["account_name"]) == str
