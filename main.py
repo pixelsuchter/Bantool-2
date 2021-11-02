@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -11,7 +12,7 @@ import colorama
 from typing import List
 
 chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
-rules_window_accept_css_selector = ".bTWzyW"
+rules_window_accept_css_selector = ".kLnQWs"
 
 colorama.init()
 try:
@@ -507,9 +508,18 @@ class Bantool:
             print("Done")
             _cleanup_unban_files()
 
+    def _clean_temporary_files(self):
+        print("Cleaning temporary files")
+        tempdir = os.path.expandvars(os.path.join("%LOCALAPPDATA%", "Temp"))
+        tempfolders = [tmp for tmp in os.listdir(tempdir) if tmp.startswith("rust_moz") or tmp.startswith("tmp")]
+        for folder in tempfolders:
+            shutil.rmtree(os.path.join(tempdir, folder))
+        print("done cleaning temporary files")
+
     def run(self):
         self.load_config()
         self.check_files()
+        self._clean_temporary_files()
         self.sort_file_and_dedupe("namelist.txt")
         for chnl in self.channels:
             self.split_unbanfiles(chnl)
