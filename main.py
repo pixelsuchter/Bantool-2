@@ -257,21 +257,21 @@ class Bantool:
                                 for name in _sub_list:
                                     for command in command_list:
                                         driver.find_element(By.CSS_SELECTOR, chat_css_selector).send_keys((command + " " + name)[::-1] + Keys.ENTER)
-                                        time.sleep(0.3) # added to prevent timeout, doesn't work :(
+                                        # time.sleep(0.1) # added to prevent timeout, doesn't work :(
 
-                                    with self.thread_lock:  # this is really bad....
-                                        if "/ban" in command_list or "/block" in command_list:
-                                            with open(f"banned_lists/{channel}.txt", "a") as banlist:
-                                                banlist.writelines("".join([f"{_name}\n" for _name in _sub_list]))
-                                        elif "/unban" in command_list or "/unblock" in command_list:
-                                            with open(f"banned_lists/{channel}.txt", "r") as banlist:
-                                                old_bannedlist = set(map(str.strip, banlist.readlines()))
-                                            unbanned_names = set(_sub_list)
-                                            new_banned_list = old_bannedlist.difference(unbanned_names)
-                                            new_banned_list = list(set([f"{name}\n" for name in new_banned_list]))
-                                            with open(f"banned_lists/{channel}.txt", "w") as banlist:
-                                                for name in sorted(new_banned_list):
-                                                    banlist.write(name)
+                                with self.thread_lock:  # this is really bad....
+                                    if "/ban" in command_list or "/block" in command_list:
+                                        with open(f"banned_lists/{channel}.txt", "a") as banlist:
+                                            banlist.writelines("".join([f"{_name}\n" for _name in _sub_list]))
+                                    elif "/unban" in command_list or "/unblock" in command_list:
+                                        with open(f"banned_lists/{channel}.txt", "r") as banlist:
+                                            old_bannedlist = set(map(str.strip, banlist.readlines()))
+                                        unbanned_names = set(_sub_list)
+                                        new_banned_list = old_bannedlist.difference(unbanned_names)
+                                        new_banned_list = list(set([f"{name}\n" for name in new_banned_list]))
+                                        with open(f"banned_lists/{channel}.txt", "w") as banlist:
+                                            for name in sorted(new_banned_list):
+                                                banlist.write(name)
 
                                 self.counter[index] += len(_sub_list)
 
