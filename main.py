@@ -1,17 +1,16 @@
-import datetime
+import _thread
+import glob
 import json
 import os
 import shutil
 import subprocess
 import sys
-import threading
 import time
-import _thread
-import glob
-import colorama
-from typing import List
 
-chat_css_selector = "textarea.ScInputBase-sc-1wz0osy-0"
+import colorama
+from selenium.webdriver import ActionChains
+
+chat_css_selector = "[role='textbox']"
 rules_window_accept_css_selector = ".kLnQWs"
 
 colorama.init()
@@ -48,55 +47,6 @@ except ImportError:
     print('Installing tqdm')
     subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
     from tqdm import tqdm
-
-script = \
-    '''
-function Sleep(milliseconds) {{
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
-}}
-
-function getSetter (element) {{
-    const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set
-    const prototype = Object.getPrototypeOf(element)
-    const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set
-
-    if (valueSetter && valueSetter !== prototypeValueSetter) {{
-        return prototypeValueSetter
-    }} else {{
-        return valueSetter
-    }}
-}}
-
-async function test(names = ["1", "2"]) {{
-    const start = new Date()
-    
-    const textarea = document.querySelector('textarea')
-    const send = document.querySelector('button[data-a-target="chat-send-button"]')
-    const setNativeValue = getSetter(textarea)
-    const event = new Event('input', {{ bubbles: true }})
-
-    var command = "{command}"
-
-    var i = 0
-    const len = names.length
-    while(i < len){{
-        await Sleep(1)
-        setNativeValue.call(textarea, [command, names[i]].join(' '))
-        textarea.dispatchEvent(event)
-        send.click()
-        i++
-    }}
-
-    const end = new Date()
-
-    console.warn(`${{len}} names were ran through test.`)
-    console.warn(`This took ${{(end - start) / 1000}} seconds.`)
-    return(names)
-}}
-
-return(test({list}))
-'''
-
 
 class Bantool:
     def __init__(self):
@@ -293,29 +243,27 @@ class Bantool:
                 chat_welcome_message = wait.until(presence_of_element_located((By.CSS_SELECTOR, ".chat-line__status")))
                 time.sleep(1)
                 if chat_field.is_displayed():
-                    chat_field.click()
-                try:  # remove rules window
-                    rules_button = wait_rules.until(presence_of_element_located((By.CSS_SELECTOR, rules_window_accept_css_selector)))
-                    if rules_button.is_displayed():
-                        rules_button.click()
-                except (NoSuchElementException, TimeoutException):
-                    pass
+                    action = ActionChains(driver)
+                    action.move_to_element(chat_field).click().perform()
+
                 if chat_field.is_displayed():
                     self.browser_status[index] = "Ready"
                     while not self.all_browsers_ready:
                         time.sleep(0.1)
-                    for command in command_list:
-                        _sub_lists = chunks(_namelist_stripped, 200)
-                        for _sub_list in _sub_lists:
-                            for i in range(1, 5):  # retry if the script times out
-                                try:
-                                    driver.execute_script(script.format(command=command, list=_sub_list))
-                                    self.counter[index] += len(_sub_list)
+                    _sub_lists = chunks(_namelist_stripped, 200)
+                    for _sub_list in _sub_lists:
+                        for i in range(1, 5):  # retry if the script times out
+                            try:
+                                for name in _sub_list:
+                                    for command in command_list:
+                                        driver.find_element(By.CSS_SELECTOR, chat_css_selector).send_keys((command + " " + name)[::-1] + Keys.ENTER)
+                                        time.sleep(0.3) # added to prevent timeout, doesn't work :(
+
                                     with self.thread_lock:  # this is really bad....
-                                        if command in ("/ban", "/block"):
+                                        if "/ban" in command_list or "/block" in command_list:
                                             with open(f"banned_lists/{channel}.txt", "a") as banlist:
                                                 banlist.writelines("".join([f"{_name}\n" for _name in _sub_list]))
-                                        elif command in ("/unban", "/unblock"):
+                                        elif "/unban" in command_list or "/unblock" in command_list:
                                             with open(f"banned_lists/{channel}.txt", "r") as banlist:
                                                 old_bannedlist = set(map(str.strip, banlist.readlines()))
                                             unbanned_names = set(_sub_list)
@@ -324,12 +272,15 @@ class Bantool:
                                             with open(f"banned_lists/{channel}.txt", "w") as banlist:
                                                 for name in sorted(new_banned_list):
                                                     banlist.write(name)
-                                    break
-                                except Exception as e:
-                                    print(e)
-                                    print(f"failed attemt {i} out of 5")
-                            else:
-                                print("failed all 5 attemts, restart is reccomended")
+
+                                self.counter[index] += len(_sub_list)
+
+                                break
+                            except Exception as e:
+                                print(e)
+                                print(f"failed attemt {i} out of 5")
+                        else:
+                            print("failed all 5 attemts, restart is reccomended")
                 time.sleep(1)
         except LookupError as e:
             print(e)
@@ -511,6 +462,7 @@ class Bantool:
     def _clean_temporary_files(self):
         print("Cleaning temporary files")
         tempdir = os.path.expandvars(os.path.join("%LOCALAPPDATA%", "Temp"))
+        print(f"Temp Folder is: {tempdir}")
         tempfolders = [tmp for tmp in os.listdir(tempdir) if tmp.startswith("rust_moz") or tmp.startswith("tmp")]
         for folder in tempfolders:
             shutil.rmtree(os.path.join(tempdir, folder))
