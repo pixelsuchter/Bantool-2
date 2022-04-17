@@ -1,5 +1,7 @@
 Bantool 2
 
+CURRENTLY BROKEN DO NOT USE
+
 New:
 
   - Doesn't need a focused window anymore

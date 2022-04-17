@@ -1,5 +1,5 @@
 <h1>Bantool 2</h1>
-
+<h1>CURRENTLY BROKEN DO NOT USE</h1>
 <h3>New:</h3>
 <ul>
 <li>Doesn't need a focused window anymore</li>
